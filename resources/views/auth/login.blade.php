@@ -66,14 +66,14 @@
                 <div class="flex items-center mb-6">
                     <input type="checkbox" id="remember" name="remember"
                         class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                    <label for="remember" class="ml-2 text-sm text-gray-600">Mujhe yaad rakho</label>
+                    <label for="remember" class="ml-2 text-sm text-gray-600">Remember Me</label>
                 </div>
 
                 <!-- Submit -->
                 <button type="submit"
                     class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg
                            transition text-sm tracking-wide">
-                    Login Karein
+                    Login
                 </button>
             </form>
         </div>
