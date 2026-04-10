@@ -79,7 +79,7 @@
             {{-- Pending Task --}}
             <div class="sm:col-span-2">
                 <label for="pending_task" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Pending Task
+                   Yesterday's Pending Task
                 </label>
                 <textarea id="pending_task" rows="3"
                           placeholder="Tasks pending from yesterday..."
@@ -90,10 +90,10 @@
             {{-- Planned Task --}}
             <div class="sm:col-span-2">
                 <label for="planned_task" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Planned Task
+                     Tommorow's Planned Task
                 </label>
                 <textarea id="planned_task" rows="3"
-                          placeholder="What is planned for today..."
+                          placeholder="What is planned for tommorow..."
                           class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50
                                  focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition resize-none">{{ isset($dailyReport) ? $dailyReport->planned_task : '' }}</textarea>
             </div>

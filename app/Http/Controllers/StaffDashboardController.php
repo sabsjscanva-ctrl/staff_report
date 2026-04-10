@@ -29,6 +29,6 @@ class StaffDashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('staff.dashboard', compact('staffDetail', 'totalReports', 'todayReport', 'recentReports'));
+        return view('Staff.dashboard', compact('staffDetail', 'totalReports', 'todayReport', 'recentReports'));
     }
 }
