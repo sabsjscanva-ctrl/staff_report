@@ -124,7 +124,7 @@
                 </div>
                 <div>
                     <h2 class="text-white font-semibold text-base leading-tight">
-                        Part 2 &mdash; Task Details
+                        Part 2 &mdash; Task Completed Today
                     </h2>
                     <p class="text-emerald-100 text-xs mt-0.5">You can add multiple tasks</p>
                 </div>
