@@ -38,6 +38,10 @@
                         <input type="text" name="name" required class="form-input" placeholder="e.g. HDMI Cable 1.5m">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Company / Brand Name</label>
+                        <input type="text" name="brand" class="form-input" placeholder="e.g. TVS Ritcomp, Logitech">
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Initial Quantity</label>
                         <input type="number" name="quantity" required min="0" class="form-input" placeholder="e.g. 50">
                     </div>
@@ -109,8 +113,9 @@
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ $item->name }}</div>
+                                <div class="text-xs text-indigo-600 font-semibold">{{ $item->brand ?? 'No Brand' }}</div>
                                 @if($item->remark)
-                                <div class="text-xs text-gray-500">{{ $item->remark }}</div>
+                                <div class="text-[10px] text-gray-400 mt-1 italic">{{ $item->remark }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -167,6 +172,11 @@
                     <label class="form-label">Item Name (Read-only)</label>
                     <input type="text" id="edit_name" disabled class="form-input bg-gray-50 text-gray-500 cursor-not-allowed">
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Company / Brand Name (Read-only)</label>
+                    <input type="text" id="edit_brand" disabled class="form-input bg-gray-50 text-gray-500 cursor-not-allowed">
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label">Details</label>
@@ -199,6 +209,7 @@
         form.action = `/stock-management/items/${item.id}`;
         
         document.getElementById('edit_name').value = item.name;
+        document.getElementById('edit_brand').value = item.brand || 'N/A';
         document.getElementById('edit_details').value = item.details || '';
         document.getElementById('edit_remark').value = item.remark || '';
         

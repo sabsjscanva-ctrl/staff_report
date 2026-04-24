@@ -9,7 +9,7 @@ class StockItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category_id', 'name', 'quantity', 'details', 'remark'];
+    protected $fillable = ['category_id', 'name', 'brand', 'quantity', 'details', 'remark'];
 
     public function category()
     {
