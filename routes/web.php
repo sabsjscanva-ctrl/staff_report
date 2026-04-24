@@ -49,8 +49,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('staff')->name('staff.')->grou
     Route::get('/view', fn() => view('Staff.ViewStaff'))->name('view');
 });
 
-// IT Management (Admin only)
-Route::middleware(['auth', 'role:admin'])->prefix('it-management')->name('it-management.')->group(function () {
+// IT Management (IT Dept only)
+Route::middleware(['auth', 'role:it_dept'])->prefix('it-management')->name('it-management.')->group(function () {
     Route::get('/allotment', [\App\Http\Controllers\ITManagementController::class, 'allotmentIndex'])->name('allotment.index');
     Route::post('/allotment', [\App\Http\Controllers\ITManagementController::class, 'allotmentStore'])->name('allotment.store');
     
@@ -58,8 +58,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('it-management')->name('it-man
     Route::post('/backup', [\App\Http\Controllers\ITManagementController::class, 'backupStore'])->name('backup.store');
 });
 
-// Stock Management (Admin only)
-Route::middleware(['auth', 'role:admin'])->prefix('stock-management')->name('stock-management.')->group(function () {
+// Stock Management (IT Dept only)
+Route::middleware(['auth', 'role:it_dept'])->prefix('stock-management')->name('stock-management.')->group(function () {
     Route::get('/categories', [\App\Http\Controllers\StockManagementController::class, 'categoryIndex'])->name('categories.index');
     Route::post('/categories', [\App\Http\Controllers\StockManagementController::class, 'categoryStore'])->name('categories.store');
     

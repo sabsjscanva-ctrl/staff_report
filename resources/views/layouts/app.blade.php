@@ -107,8 +107,8 @@
                 </div>
                 @endif
 
-                {{-- IT Management Dropdown (Admin only) --}}
-                @if(Auth::user()->role === 'admin')
+                {{-- IT Management Dropdown (IT Dept only) --}}
+                @if(Auth::user()->role === 'it_dept')
                 <div class="relative" id="it-menu-wrapper">
                     <button onclick="toggleITMenu()"
                         class="flex items-center gap-1 text-sm font-medium hover:text-indigo-200 transition focus:outline-none">
@@ -123,14 +123,14 @@
                         <a href="{{ route('it-management.allotment.index') }}"
                             class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 21h6l-.75-4M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                             Hardware Allotment
                         </a>
                         <a href="{{ route('it-management.backup.index') }}"
                             class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                             </svg>
                             Backup Logs
                         </a>
@@ -138,8 +138,8 @@
                 </div>
                 @endif
 
-                {{-- Stock Management Dropdown (Admin only) --}}
-                @if(Auth::user()->role === 'admin')
+                {{-- Stock Management Dropdown (IT Dept only) --}}
+                @if(Auth::user()->role === 'it_dept')
                 <div class="relative" id="stock-menu-wrapper">
                     <button onclick="toggleStockMenu()"
                         class="flex items-center gap-1 text-sm font-medium hover:text-indigo-200 transition focus:outline-none">
