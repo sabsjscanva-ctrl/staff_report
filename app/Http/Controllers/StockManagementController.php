@@ -5,12 +5,38 @@ namespace App\Http\Controllers;
 use App\Models\StockCategory;
 use App\Models\StockItem;
 use App\Models\StockAllotment;
+use App\Models\StockPurchase;
 use App\Models\Staff\StaffModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StockManagementController extends Controller
 {
+    public function purchaseIndex()
+    {
+        $items = StockItem::all();
+        $purchases = StockPurchase::with('item.category')->latest()->paginate(10);
+        return view('StockManagement.purchases', compact('items', 'purchases'));
+    }
+
+    public function purchaseStore(Request $request)
+    {
+        $request->validate([
+            'item_id' => 'required|exists:stock_items,id',
+            'quantity' => 'required|integer|min:1',
+            'purchase_date' => 'required|date',
+            'vendor_name' => 'nullable|string',
+            'invoice_no' => 'nullable|string',
+            'amount' => 'nullable|numeric',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            StockPurchase::create($request->all());
+            StockItem::find($request->item_id)->increment('quantity', $request->quantity);
+        });
+
+        return back()->with('success', 'New purchase recorded and stock updated');
+    }
     public function categoryIndex()
     {
         $categories = StockCategory::all();
