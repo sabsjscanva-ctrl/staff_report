@@ -24,10 +24,22 @@ class StockManagementController extends Controller
         return back()->with('success', 'Category created successfully');
     }
 
-    public function itemIndex()
+    public function itemIndex(Request $request)
     {
         $categories = StockCategory::all();
-        $items = StockItem::with('category')->latest()->paginate(10);
+        
+        $query = StockItem::with('category')->latest();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $items = $query->paginate(10)->withQueryString();
+        
         return view('StockManagement.items', compact('categories', 'items'));
     }
 

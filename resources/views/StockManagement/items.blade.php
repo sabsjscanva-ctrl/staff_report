@@ -60,6 +60,39 @@
     <!-- Item List -->
     <div class="lg:col-span-2">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <!-- Filter Bar -->
+            <div class="p-4 border-b bg-gray-50/50">
+                <form action="{{ route('stock-management.items.index') }}" method="GET" class="flex flex-wrap items-end gap-3">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 ml-1">Search Item</label>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-input !py-2" placeholder="Item name...">
+                    </div>
+                    <div class="w-48">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 ml-1">Category</label>
+                        <select name="category_id" class="form-select !py-2" onchange="this.form.submit()">
+                            <option value="">All Categories</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-indigo-600 p-2.5 rounded-xl text-white hover:bg-indigo-700 transition-all shadow-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+                        @if(request()->anyFilled(['search', 'category_id']))
+                        <a href="{{ route('stock-management.items.index') }}" class="bg-gray-200 p-2.5 rounded-xl text-gray-600 hover:bg-gray-300 transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
