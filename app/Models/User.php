@@ -63,4 +63,22 @@ class User extends Authenticatable
     {
         return $this->role === $role;
     }
+
+    public function staff()
+    {
+        return $this->hasOne(\App\Models\Staff\StaffModel::class, 'user_id');
+    }
+
+    public function canAccessIT(): bool
+    {
+        if ($this->role === 'IT DEPARTMENT') {
+            return true;
+        }
+        
+        if ($this->staff && $this->staff->department && $this->staff->department->name === 'IT DEPARTMENT') {
+            return true;
+        }
+        
+        return false;
+    }
 }
