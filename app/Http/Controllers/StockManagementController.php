@@ -27,7 +27,7 @@ class StockManagementController extends Controller
     public function itemIndex()
     {
         $categories = StockCategory::all();
-        $items = StockItem::with('category')->get();
+        $items = StockItem::with('category')->latest()->paginate(10);
         return view('StockManagement.items', compact('categories', 'items'));
     }
 
@@ -40,6 +40,19 @@ class StockManagementController extends Controller
         ]);
         StockItem::create($request->all());
         return back()->with('success', 'Item added to stock');
+    }
+
+    public function itemUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'details' => 'nullable|string',
+            'remark' => 'nullable|string',
+        ]);
+
+        $item = StockItem::findOrFail($id);
+        $item->update($request->only(['details', 'remark']));
+
+        return back()->with('success', 'Item updated successfully');
     }
 
     public function allotmentIndex()
