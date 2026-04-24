@@ -42,4 +42,19 @@ class StaffModel extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function systemAllotment()
+    {
+        return $this->hasOne(\App\Models\SystemAllotment::class, 'staff_id');
+    }
+
+    public function systemBackups()
+    {
+        return $this->hasMany(\App\Models\SystemBackup::class, 'staff_id');
+    }
+
+    public function stockAllotments()
+    {
+        return $this->hasMany(\App\Models\StockAllotment::class, 'staff_id');
+    }
 }

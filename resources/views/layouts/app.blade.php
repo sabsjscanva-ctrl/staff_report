@@ -107,6 +107,75 @@
                 </div>
                 @endif
 
+                {{-- IT Management Dropdown (Admin only) --}}
+                @if(Auth::user()->role === 'admin')
+                <div class="relative" id="it-menu-wrapper">
+                    <button onclick="toggleITMenu()"
+                        class="flex items-center gap-1 text-sm font-medium hover:text-indigo-200 transition focus:outline-none">
+                        IT Management
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div id="it-dropdown"
+                        class="hidden absolute left-0 mt-2 w-52 bg-white text-gray-700 rounded-xl shadow-lg py-1 z-50 border border-gray-100">
+                        <a href="{{ route('it-management.allotment.index') }}"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Hardware Allotment
+                        </a>
+                        <a href="{{ route('it-management.backup.index') }}"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            Backup Logs
+                        </a>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Stock Management Dropdown (Admin only) --}}
+                @if(Auth::user()->role === 'admin')
+                <div class="relative" id="stock-menu-wrapper">
+                    <button onclick="toggleStockMenu()"
+                        class="flex items-center gap-1 text-sm font-medium hover:text-indigo-200 transition focus:outline-none">
+                        Stock Management
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div id="stock-dropdown"
+                        class="hidden absolute left-0 mt-2 w-52 bg-white text-gray-700 rounded-xl shadow-lg py-1 z-50 border border-gray-100">
+                        <a href="{{ route('stock-management.categories.index') }}"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            Stock Categories
+                        </a>
+                        <a href="{{ route('stock-management.items.index') }}"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            Manage Stock Items
+                        </a>
+                        <a href="{{ route('stock-management.allotments.index') }}"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Stock Allotment
+                        </a>
+                    </div>
+                </div>
+                @endif
+
                 {{-- Daily Report (All roles) --}}
                 <div class="relative" id="dailyreport-menu-wrapper">
                     <button onclick="toggleDailyReportMenu()"
@@ -167,6 +236,12 @@
         function toggleStaffMenu() {
             document.getElementById('staff-dropdown').classList.toggle('hidden');
         }
+        function toggleITMenu() {
+            document.getElementById('it-dropdown').classList.toggle('hidden');
+        }
+        function toggleStockMenu() {
+            document.getElementById('stock-dropdown').classList.toggle('hidden');
+        }
         function toggleDailyReportMenu() {
             document.getElementById('dailyreport-dropdown').classList.toggle('hidden');
         }
@@ -183,6 +258,14 @@
             const staffWrapper = document.getElementById('staff-menu-wrapper');
             if (staffWrapper && !staffWrapper.contains(e.target)) {
                 document.getElementById('staff-dropdown').classList.add('hidden');
+            }
+            const itWrapper = document.getElementById('it-menu-wrapper');
+            if (itWrapper && !itWrapper.contains(e.target)) {
+                document.getElementById('it-dropdown').classList.add('hidden');
+            }
+            const stockWrapper = document.getElementById('stock-menu-wrapper');
+            if (stockWrapper && !stockWrapper.contains(e.target)) {
+                document.getElementById('stock-dropdown').classList.add('hidden');
             }
             const drWrapper = document.getElementById('dailyreport-menu-wrapper');
             if (drWrapper && !drWrapper.contains(e.target)) {
