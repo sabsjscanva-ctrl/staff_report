@@ -108,7 +108,7 @@
                 @endif
 
                 {{-- IT Management Dropdown (IT Dept only) --}}
-                @if(Auth::user()->role === 'it_dept')
+                @if(Auth::user()->role === 'IT DEPARTMENT')
                 <div class="relative" id="it-menu-wrapper">
                     <button onclick="toggleITMenu()"
                         class="flex items-center gap-1 text-sm font-medium hover:text-indigo-200 transition focus:outline-none">
@@ -139,7 +139,7 @@
                 @endif
 
                 {{-- Stock Management Dropdown (IT Dept only) --}}
-                @if(Auth::user()->role === 'it_dept')
+                @if(Auth::user()->role === 'IT DEPARTMENT')
                 <div class="relative" id="stock-menu-wrapper">
                     <button onclick="toggleStockMenu()"
                         class="flex items-center gap-1 text-sm font-medium hover:text-indigo-200 transition focus:outline-none">
