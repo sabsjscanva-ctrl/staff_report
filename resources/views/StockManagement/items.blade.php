@@ -70,6 +70,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </button>
+                        @if(request()->anyFilled(['search', 'category_id']))
+                        <a href="{{ route('stock-management.items.index') }}" class="bg-gray-100 p-2.5 rounded-xl text-gray-400 hover:bg-gray-200 transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </a>
+                        @endif
                     </div>
                 </form>
             </div>
@@ -187,14 +194,6 @@
                 </button>
             </div>
         </form>
-    </div>
-</div>
-            @if($items->hasPages())
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
-                {{ $items->links() }}
-            </div>
-            @endif
-        </div>
     </div>
 </div>
 
