@@ -94,14 +94,42 @@ class StockManagementController extends Controller
     public function itemUpdate(Request $request, $id)
     {
         $request->validate([
-            'details' => 'nullable|string',
-            'remark' => 'nullable|string',
+            'category_id' => 'required|exists:stock_categories,id',
+            'name' => 'required',
         ]);
 
         $item = StockItem::findOrFail($id);
-        $item->update($request->only(['details', 'remark']));
+        $item->update($request->only(['category_id', 'name']));
 
         return back()->with('success', 'Item updated successfully');
+    }
+
+    public function itemDestroy($id)
+    {
+        $item = StockItem::findOrFail($id);
+        $item->delete();
+        return back()->with('success', 'Item Type and all its brands deleted successfully');
+    }
+
+    public function brandUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required',
+            'quantity' => 'required|integer|min:0',
+            'details' => 'nullable|string',
+        ]);
+
+        $brand = StockItemBrand::findOrFail($id);
+        $brand->update($request->all());
+
+        return back()->with('success', 'Brand updated successfully');
+    }
+
+    public function brandDestroy($id)
+    {
+        $brand = StockItemBrand::findOrFail($id);
+        $brand->delete();
+        return back()->with('success', 'Brand deleted successfully');
     }
 
     public function allotmentIndex()
@@ -118,6 +146,8 @@ class StockManagementController extends Controller
             'staff_id' => 'required|exists:staff_details,id',
             'brand_id' => 'required|exists:stock_item_brands,id',
             'quantity' => 'required|integer|min:1',
+            'allotment_type' => 'required|in:Permanent,Temporary',
+            'return_date' => 'required_if:allotment_type,Temporary|nullable|date',
             'allotment_date' => 'required|date',
         ]);
 
