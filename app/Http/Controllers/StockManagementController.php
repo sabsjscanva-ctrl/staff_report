@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StockCategory;
 use App\Models\StockItem;
+use App\Models\StockItemBrand;
 use App\Models\StockAllotment;
 use App\Models\StockPurchase;
 use App\Models\Staff\StaffModel;
@@ -14,15 +15,15 @@ class StockManagementController extends Controller
 {
     public function purchaseIndex()
     {
-        $items = StockItem::all();
-        $purchases = StockPurchase::with('item.category')->latest()->paginate(10);
-        return view('StockManagement.purchases', compact('items', 'purchases'));
+        $brands = StockItemBrand::with('item.category')->get();
+        $purchases = StockPurchase::with('brand.item.category')->latest()->paginate(10);
+        return view('StockManagement.purchases', compact('brands', 'purchases'));
     }
 
     public function purchaseStore(Request $request)
     {
         $request->validate([
-            'item_id' => 'required|exists:stock_items,id',
+            'brand_id' => 'required|exists:stock_item_brands,id',
             'quantity' => 'required|integer|min:1',
             'purchase_date' => 'required|date',
             'vendor_name' => 'nullable|string',
@@ -32,7 +33,7 @@ class StockManagementController extends Controller
 
         DB::transaction(function () use ($request) {
             StockPurchase::create($request->all());
-            StockItem::find($request->item_id)->increment('quantity', $request->quantity);
+            StockItemBrand::find($request->brand_id)->increment('quantity', $request->quantity);
         });
 
         return back()->with('success', 'New purchase recorded and stock updated');
@@ -54,7 +55,7 @@ class StockManagementController extends Controller
     {
         $categories = StockCategory::all();
         
-        $query = StockItem::with('category')->latest();
+        $query = StockItem::with(['category', 'brands'])->latest();
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
@@ -74,10 +75,20 @@ class StockManagementController extends Controller
         $request->validate([
             'category_id' => 'required|exists:stock_categories,id',
             'name' => 'required',
-            'quantity' => 'required|integer|min:0',
         ]);
         StockItem::create($request->all());
-        return back()->with('success', 'Item added to stock');
+        return back()->with('success', 'Item Type created successfully');
+    }
+
+    public function brandStore(Request $request)
+    {
+        $request->validate([
+            'stock_item_id' => 'required|exists:stock_items,id',
+            'name' => 'required', // This is brand name
+            'quantity' => 'required|integer|min:0',
+        ]);
+        StockItemBrand::create($request->all());
+        return back()->with('success', 'Brand/Category added to Item');
     }
 
     public function itemUpdate(Request $request, $id)
@@ -96,29 +107,29 @@ class StockManagementController extends Controller
     public function allotmentIndex()
     {
         $staffs = StaffModel::all();
-        $items = StockItem::where('quantity', '>', 0)->get();
-        $allotments = StockAllotment::with(['staff', 'item.category'])->get();
-        return view('StockManagement.allotments', compact('staffs', 'items', 'allotments'));
+        $brands = StockItemBrand::with('item.category')->where('quantity', '>', 0)->get();
+        $allotments = StockAllotment::with(['staff', 'brand.item.category'])->get();
+        return view('StockManagement.allotments', compact('staffs', 'brands', 'allotments'));
     }
 
     public function allotmentStore(Request $request)
     {
         $request->validate([
             'staff_id' => 'required|exists:staff_details,id',
-            'item_id' => 'required|exists:stock_items,id',
+            'brand_id' => 'required|exists:stock_item_brands,id',
             'quantity' => 'required|integer|min:1',
             'allotment_date' => 'required|date',
         ]);
 
-        $item = StockItem::find($request->item_id);
+        $brand = StockItemBrand::find($request->brand_id);
 
-        if ($item->quantity < $request->quantity) {
+        if ($brand->quantity < $request->quantity) {
             return back()->with('error', 'Insufficient stock quantity');
         }
 
-        DB::transaction(function () use ($request, $item) {
+        DB::transaction(function () use ($request, $brand) {
             StockAllotment::create($request->all());
-            $item->decrement('quantity', $request->quantity);
+            $brand->decrement('quantity', $request->quantity);
         });
 
         return back()->with('success', 'Stock allotted successfully');

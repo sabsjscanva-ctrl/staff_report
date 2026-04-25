@@ -40,11 +40,11 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Select Item</label>
-                        <select name="item_id" required class="form-select">
+                        <label class="form-label">Select Item (Brand/Model)</label>
+                        <select name="brand_id" required class="form-select">
                             <option value="">-- Select Item --</option>
-                            @foreach($items as $item)
-                                <option value="{{ $item->id }}">{{ $item->name }} (In Stock: {{ $item->quantity }})</option>
+                            @foreach($brands as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->item->name }} - {{ $brand->name }} (In Stock: {{ $brand->quantity }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -94,8 +94,8 @@
                                 <div class="text-sm font-medium text-gray-900">{{ $allot->staff->name }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $allot->item->name }}</div>
-                                <div class="text-xs text-gray-500">{{ $allot->item->category->name }}</div>
+                                <div class="text-sm text-gray-900">{{ $allot->brand->item->name ?? 'Deleted' }} ({{ $allot->brand->name ?? 'N/A' }})</div>
+                                <div class="text-xs text-gray-500">{{ $allot->brand->item->category->name ?? 'N/A' }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $allot->quantity }}

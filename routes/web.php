@@ -65,6 +65,7 @@ Route::middleware(['auth', 'role:IT DEPARTMENT'])->prefix('stock-management')->n
     
     Route::get('/items', [\App\Http\Controllers\StockManagementController::class, 'itemIndex'])->name('items.index');
     Route::post('/items', [\App\Http\Controllers\StockManagementController::class, 'itemStore'])->name('items.store');
+    Route::post('/items/brands', [\App\Http\Controllers\StockManagementController::class, 'brandStore'])->name('items.brands.store');
     Route::put('/items/{id}', [\App\Http\Controllers\StockManagementController::class, 'itemUpdate'])->name('items.update');
     
     Route::get('/purchases', [\App\Http\Controllers\StockManagementController::class, 'purchaseIndex'])->name('purchases.index');

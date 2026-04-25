@@ -25,11 +25,11 @@
                 @csrf
                 <div class="space-y-4">
                     <div class="form-group">
-                        <label class="form-label">Item / Peripheral</label>
-                        <select name="item_id" required class="form-select">
-                            <option value="">-- Select Item --</option>
-                            @foreach($items as $item)
-                                <option value="{{ $item->id }}">{{ $item->name }} (Current: {{ $item->quantity }})</option>
+                        <label class="form-label">Select Brand / Model</label>
+                        <select name="brand_id" required class="form-select">
+                            <option value="">-- Select Brand --</option>
+                            @foreach($brands as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->item->name }} - {{ $brand->name }} (In Stock: {{ $brand->quantity }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -91,7 +91,7 @@
                         @forelse($purchases as $purchase)
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-bold text-gray-900">{{ $purchase->item->name }}</div>
+                                <div class="text-sm font-bold text-gray-900">{{ $purchase->brand->item->name ?? 'Deleted' }} ({{ $purchase->brand->name ?? 'N/A' }})</div>
                                 <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d M, Y') }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

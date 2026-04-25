@@ -9,11 +9,16 @@ class StockItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category_id', 'name', 'brand', 'quantity', 'details', 'remark'];
+    protected $fillable = ['category_id', 'name', 'details', 'remark'];
 
     public function category()
     {
         return $this->belongsTo(StockCategory::class, 'category_id');
+    }
+
+    public function brands()
+    {
+        return $this->hasMany(StockItemBrand::class, 'stock_item_id');
     }
 
     public function allotments()
