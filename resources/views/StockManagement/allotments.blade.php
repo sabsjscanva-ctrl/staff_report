@@ -56,16 +56,19 @@
                                 <div class="grid grid-cols-1 gap-3">
                                     <div class="form-group">
                                         <label class="text-xs font-bold text-gray-500 mb-1 block">Item (Brand/Model)</label>
-                                        <select name="items[0][brand_id]" required class="form-select text-sm border-gray-200 rounded-lg">
+                                        <select name="items[0][brand_id]" required class="form-select text-sm border-gray-200 rounded-lg brand-select" onchange="validateStock(this)">
                                             <option value="">-- Select Item --</option>
                                             @foreach($brands as $brand)
-                                                <option value="{{ $brand->id }}">{{ $brand->item->name }} - {{ $brand->name }} (In Stock: {{ $brand->quantity }})</option>
+                                                <option value="{{ $brand->id }}" data-stock="{{ $brand->quantity }}">
+                                                    {{ $brand->item->name }} - {{ $brand->name }} (In Stock: {{ $brand->quantity }})
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="form-group">
                                         <label class="text-xs font-bold text-gray-500 mb-1 block">Quantity</label>
-                                        <input type="number" name="items[0][quantity]" required min="1" class="form-input text-sm border-gray-200 rounded-lg" placeholder="Qty">
+                                        <input type="number" name="items[0][quantity]" required min="1" class="form-input text-sm border-gray-200 rounded-lg qty-input" placeholder="Qty" oninput="validateStock(this)">
+                                        <p class="stock-warning text-[10px] font-bold text-red-500 mt-1 hidden"></p>
                                     </div>
                                 </div>
                             </div>
@@ -182,13 +185,19 @@
         selects.forEach(select => {
             select.name = `items[${rowCount}][brand_id]`;
             select.value = '';
+            select.classList.remove('border-red-500');
         });
 
         const inputs = newRow.querySelectorAll('input');
         inputs.forEach(input => {
             input.name = `items[${rowCount}][quantity]`;
             input.value = '';
+            input.classList.remove('border-red-500');
         });
+
+        // Hide warning in new row
+        newRow.querySelector('.stock-warning').classList.add('hidden');
+        newRow.querySelector('.stock-warning').textContent = '';
 
         // Add remove button if not already present
         if (!newRow.querySelector('.remove-row-btn')) {
@@ -202,12 +211,52 @@
             `;
             removeBtn.onclick = function() {
                 newRow.remove();
+                checkFormValidity();
             };
             newRow.appendChild(removeBtn);
         }
 
         container.appendChild(newRow);
         rowCount++;
+    }
+
+    function validateStock(element) {
+        const row = element.closest('.item-row');
+        const brandSelect = row.querySelector('.brand-select');
+        const qtyInput = row.querySelector('.qty-input');
+        const warning = row.querySelector('.stock-warning');
+        
+        const selectedOption = brandSelect.options[brandSelect.selectedIndex];
+        const availableStock = selectedOption ? parseInt(selectedOption.getAttribute('data-stock')) : 0;
+        const requestedQty = parseInt(qtyInput.value) || 0;
+
+        if (requestedQty > availableStock && brandSelect.value !== '') {
+            warning.textContent = `Insufficient stock! Max available: ${availableStock}`;
+            warning.classList.remove('hidden');
+            qtyInput.classList.add('border-red-500', 'bg-red-50');
+            qtyInput.classList.remove('border-gray-200');
+        } else {
+            warning.classList.add('hidden');
+            qtyInput.classList.remove('border-red-500', 'bg-red-50');
+            qtyInput.classList.add('border-gray-200');
+        }
+        checkFormValidity();
+    }
+
+    function checkFormValidity() {
+        const form = document.getElementById('allotmentForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const warnings = form.querySelectorAll('.stock-warning:not(.hidden)');
+        
+        if (warnings.length > 0) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.remove('hover:bg-indigo-700');
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            submitBtn.classList.add('hover:bg-indigo-700');
+        }
     }
 
     function toggleReturnDate(show) {
