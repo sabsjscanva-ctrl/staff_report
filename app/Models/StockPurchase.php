@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class StockPurchase extends Model
 {
     protected $fillable = [
+        'item_id',
         'brand_id', // Changed from item_id
         'quantity',
         'purchase_date',

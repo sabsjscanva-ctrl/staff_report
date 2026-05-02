@@ -32,8 +32,11 @@ class StockManagementController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            StockPurchase::create($request->all());
-            StockItemBrand::find($request->brand_id)->increment('quantity', $request->quantity);
+            $brand = StockItemBrand::findOrFail($request->brand_id);
+            $data = $request->all();
+            $data['item_id'] = $brand->stock_item_id;
+            StockPurchase::create($data);
+            $brand->increment('quantity', $request->quantity);
         });
 
         return back()->with('success', 'New purchase recorded and stock updated');
@@ -158,7 +161,9 @@ class StockManagementController extends Controller
         }
 
         DB::transaction(function () use ($request, $brand) {
-            StockAllotment::create($request->all());
+            $data = $request->all();
+            $data['item_id'] = $brand->stock_item_id;
+            StockAllotment::create($data);
             $brand->decrement('quantity', $request->quantity);
         });
 
