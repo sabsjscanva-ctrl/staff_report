@@ -147,26 +147,41 @@ class StockManagementController extends Controller
     {
         $request->validate([
             'staff_id' => 'required|exists:staff_details,id',
-            'brand_id' => 'required|exists:stock_item_brands,id',
-            'quantity' => 'required|integer|min:1',
+            'items' => 'required|array|min:1',
+            'items.*.brand_id' => 'required|exists:stock_item_brands,id',
+            'items.*.quantity' => 'required|integer|min:1',
             'allotment_type' => 'required|in:Permanent,Temporary',
             'return_date' => 'required_if:allotment_type,Temporary|nullable|date',
             'allotment_date' => 'required|date',
         ]);
 
-        $brand = StockItemBrand::find($request->brand_id);
+        try {
+            DB::transaction(function () use ($request) {
+                foreach ($request->items as $itemData) {
+                    $brand = StockItemBrand::findOrFail($itemData['brand_id']);
 
-        if ($brand->quantity < $request->quantity) {
-            return back()->with('error', 'Insufficient stock quantity');
+                    if ($brand->quantity < $itemData['quantity']) {
+                        throw new \Exception("Insufficient stock for: " . $brand->item->name . " - " . $brand->name);
+                    }
+
+                    StockAllotment::create([
+                        'staff_id' => $request->staff_id,
+                        'item_id' => $brand->stock_item_id,
+                        'brand_id' => $brand->id,
+                        'quantity' => $itemData['quantity'],
+                        'allotment_type' => $request->allotment_type,
+                        'return_date' => $request->return_date,
+                        'allotment_date' => $request->allotment_date,
+                        'remark' => $request->remark,
+                    ]);
+
+                    $brand->decrement('quantity', $itemData['quantity']);
+                }
+            });
+
+            return back()->with('success', 'Stock items allotted successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        DB::transaction(function () use ($request, $brand) {
-            $data = $request->all();
-            $data['item_id'] = $brand->stock_item_id;
-            StockAllotment::create($data);
-            $brand->decrement('quantity', $request->quantity);
-        });
-
-        return back()->with('success', 'Stock allotted successfully');
     }
 }
