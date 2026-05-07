@@ -35,31 +35,35 @@
 @if($isBirthday || $isAnniversary)
 <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
     @if($isBirthday)
-    <div class="bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-5 text-white shadow-lg shadow-rose-200 relative overflow-hidden">
-        <div class="relative z-10 flex items-center gap-4">
-            <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-2xl">🎂</div>
+    <div class="bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg shadow-rose-200 relative overflow-hidden">
+        <div class="relative z-10 flex items-center gap-5">
+            <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shadow-inner">🎂</div>
             <div>
-                <h3 class="font-bold text-lg">Happy Birthday!</h3>
-                <p class="text-rose-100 text-sm">Wishing you a fantastic day filled with joy!</p>
+                <h3 class="font-bold text-xl">Happy Birthday, {{ Auth::user()->name }}!</h3>
+                <p class="text-rose-100 text-sm mt-1 leading-relaxed">
+                    On this special day, we celebrate you! Wishing you a fantastic day filled with joy, prosperity, and success. Thank you for being such an integral part of our team.
+                </p>
             </div>
         </div>
-        <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12">
-            <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M19 15v2h2v2h-2v2h-2v-2h-2v-2h2v-2h2zM7 9a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8zm10-2a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8zM7 17a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8zm10-2a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8z"/></svg>
+        <div class="absolute -right-6 -bottom-6 opacity-10 transform rotate-12 scale-150">
+            <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M19 15v2h2v2h-2v2h-2v-2h-2v-2h2v-2h2zM7 9a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8zm10-2a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8zM7 17a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8zm10-2a2 2 0 100-4 2 2 0 000 4zm0 2a4 4 0 110-8 4 4 0 010 8z"/></svg>
         </div>
     </div>
     @endif
 
     @if($isAnniversary)
-    <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-lg shadow-orange-200 relative overflow-hidden">
-        <div class="relative z-10 flex items-center gap-4">
-            <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-2xl">🎊</div>
+    <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg shadow-orange-200 relative overflow-hidden">
+        <div class="relative z-10 flex items-center gap-5">
+            <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shadow-inner">🎊</div>
             <div>
-                <h3 class="font-bold text-lg">Work Anniversary!</h3>
-                <p class="text-orange-100 text-sm">Congratulations on completing {{ $yearsOfService }} year(s) with us!</p>
+                <h3 class="font-bold text-xl">Happy Work Anniversary, {{ Auth::user()->name }}!</h3>
+                <p class="text-orange-100 text-sm mt-1 leading-relaxed">
+                    Congratulations on completing {{ $yearsOfService }} year(s) of excellence with us. Your hard work and dedication have been a vital part of our success. Here's to many more milestones together!
+                </p>
             </div>
         </div>
-        <div class="absolute -right-4 -bottom-4 opacity-20 transform rotate-12">
-            <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 11v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        <div class="absolute -right-6 -bottom-6 opacity-10 transform rotate-12 scale-150">
+            <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 11v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
         </div>
     </div>
     @endif
