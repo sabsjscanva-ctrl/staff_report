@@ -147,6 +147,27 @@
                     </div>
                     @endif
 
+                    {{-- Profile Requests (Admin & Manager) --}}
+                    @if(in_array(Auth::user()->role, ['admin', 'manager']))
+                    <a href="{{ route('profile.requests.index') }}"
+                       class="text-sm font-medium hover:text-indigo-200 transition focus:outline-none flex items-center gap-1">
+                        Profile Requests
+                        @php
+                            $pendingReqs = \App\Models\Staff\ProfileUpdateRequest::where('status', 'pending');
+                            if(Auth::user()->role === 'manager' && Auth::user()->staff) {
+                                $officeId = Auth::user()->staff->office_id;
+                                $pendingReqs->whereHas('staff', function($q) use ($officeId) {
+                                    $q->where('office_id', $officeId);
+                                });
+                            }
+                            $pendingCount = $pendingReqs->count();
+                        @endphp
+                        @if($pendingCount > 0)
+                            <span class="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{{ $pendingCount }}</span>
+                        @endif
+                    </a>
+                    @endif
+
                     {{-- Daily Report Dropdown --}}
                     <div class="relative" id="dailyreport-menu-wrapper">
                         <button onclick="toggleDailyReportMenu()"
@@ -172,16 +193,23 @@
 
                 <!-- Right side: User Info & Logout (Desktop) -->
                 <div class="hidden md:flex items-center gap-4">
-                    <span class="text-sm whitespace-nowrap">
-                        {{ Auth::user()->name }} &mdash;
-                        <span class="capitalize bg-indigo-500 px-2 py-0.5 rounded text-xs">{{ Auth::user()->role }}</span>
-                    </span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-lg transition shadow-sm font-medium">
-                            Logout
+                    <div class="relative group">
+                        <button class="flex items-center gap-1 text-sm font-medium focus:outline-none hover:text-indigo-200 transition">
+                            <span class="whitespace-nowrap">{{ Auth::user()->name }}</span>
+                            <span class="capitalize bg-indigo-500 px-2 py-0.5 rounded text-xs ml-1">{{ Auth::user()->role }}</span>
                         </button>
-                    </form>
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 hidden group-hover:block border border-gray-100 z-50">
+                            <button onclick="document.getElementById('global-change-password-modal').classList.remove('hidden')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition">
+                                Change Password
+                            </button>
+                            <form method="POST" action="{{ route('logout') }}" class="block w-full">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition">
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -200,17 +228,20 @@
 
         <!-- Mobile Menu (Hidden by default) -->
         <div id="mobile-menu" class="hidden md:hidden bg-indigo-800 border-t border-indigo-600 pb-4">
-            <div class="px-4 py-3 border-b border-indigo-700 mb-2 flex items-center justify-between">
-                <div>
-                    <div class="text-base font-medium">{{ Auth::user()->name }}</div>
-                    <div class="text-sm text-indigo-300 capitalize">{{ Auth::user()->role }}</div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded transition">
-                        Logout
+            <div class="px-4 py-3 border-b border-indigo-700 mb-2">
+                <div class="text-base font-medium">{{ Auth::user()->name }}</div>
+                <div class="text-sm text-indigo-300 capitalize">{{ Auth::user()->role }}</div>
+                <div class="mt-2 flex gap-2">
+                    <button onclick="document.getElementById('global-change-password-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded transition">
+                        Change Password
                     </button>
-                </form>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded transition">
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <div class="px-2 space-y-1">
@@ -238,6 +269,38 @@
     <main class="max-w-7xl mx-auto px-4 py-8">
         @yield('content')
     </main>
+
+    {{-- Global Change Password Modal --}}
+    <div id="global-change-password-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Change Password</h3>
+                <button onclick="document.getElementById('global-change-password-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form id="global-change-password-form" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Current Password</label>
+                    <input type="password" name="current_password" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">New Password</label>
+                    <input type="password" name="new_password" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                    <input type="password" name="new_password_confirmation" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                </div>
+                <div id="global-password-alert" class="hidden rounded-md p-3 text-sm"></div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="document.getElementById('global-change-password-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     @stack('scripts')
 
@@ -288,6 +351,41 @@
                 if (wrapper && dropdown && !wrapper.contains(e.target)) {
                     dropdown.classList.add('hidden');
                 }
+            });
+        });
+
+        document.getElementById('global-change-password-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const alertBox = document.getElementById('global-password-alert');
+            
+            fetch('{{ route('password.update') }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(async res => {
+                const data = await res.json();
+                alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+                if (data.success) {
+                    alertBox.classList.add('bg-green-50', 'text-green-700');
+                    alertBox.innerText = data.message;
+                    setTimeout(() => {
+                        document.getElementById('global-change-password-modal').classList.add('hidden');
+                        alertBox.classList.add('hidden');
+                        document.getElementById('global-change-password-form').reset();
+                    }, 2000);
+                } else {
+                    alertBox.classList.add('bg-red-50', 'text-red-700');
+                    alertBox.innerText = data.message || 'Error updating password.';
+                }
+            })
+            .catch(err => {
+                alertBox.classList.remove('hidden');
+                alertBox.classList.add('bg-red-50', 'text-red-700');
+                alertBox.innerText = 'Something went wrong. Please check your inputs.';
             });
         });
     </script>

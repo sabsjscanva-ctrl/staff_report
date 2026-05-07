@@ -29,6 +29,16 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 // Staff routes
 Route::middleware(['auth', 'role:staff'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/profile-update-request', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'store'])->name('profile.update.request');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/change-password', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'changePassword'])->name('password.update');
+    
+    // Profile Update Requests for Admin/Manager
+    Route::get('/profile-requests', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'index'])->name('profile.requests.index');
+    Route::post('/profile-requests/{id}/approve', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'approve'])->name('profile.requests.approve');
+    Route::post('/profile-requests/{id}/reject', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'reject'])->name('profile.requests.reject');
 });
 
 // Office Management (Admin only)

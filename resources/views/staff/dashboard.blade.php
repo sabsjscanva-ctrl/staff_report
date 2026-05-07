@@ -19,6 +19,16 @@
         </svg>
         Submit Today's Report
     </a>
+    <div class="flex items-center gap-2">
+        <button onclick="document.getElementById('update-profile-modal').classList.remove('hidden')"
+           class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition shadow-sm">
+            Update Profile
+        </button>
+        <button onclick="document.getElementById('change-password-modal').classList.remove('hidden')"
+           class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition shadow-sm">
+            Change Password
+        </button>
+    </div>
 </div>
 
 {{-- Today's Status Banner --}}
@@ -290,4 +300,141 @@
 
 </div>
 
+{{-- Update Profile Modal --}}
+<div id="update-profile-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-800">Request Profile Update</h3>
+            <button onclick="document.getElementById('update-profile-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="profile-update-form" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
+                <input type="text" name="mobile" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->mobile ?? '' }}">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                <input type="email" name="email" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ Auth::user()->email }}">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Address</label>
+                <textarea name="address" rows="3" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">{{ $staffDetail->address ?? '' }}</textarea>
+            </div>
+            <div id="profile-alert" class="hidden rounded-md p-3 text-sm"></div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="document.getElementById('update-profile-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Change Password Modal --}}
+<div id="change-password-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-800">Change Password</h3>
+            <button onclick="document.getElementById('change-password-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form id="change-password-form" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Current Password</label>
+                <input type="password" name="current_password" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">New Password</label>
+                <input type="password" name="new_password" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                <input type="password" name="new_password_confirmation" required class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+            </div>
+            <div id="password-alert" class="hidden rounded-md p-3 text-sm"></div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="document.getElementById('change-password-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">Change Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('profile-update-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const alertBox = document.getElementById('profile-alert');
+        
+        fetch('{{ route('staff.profile.update.request') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+            if (data.success) {
+                alertBox.classList.add('bg-green-50', 'text-green-700');
+                alertBox.innerText = data.message;
+                setTimeout(() => {
+                    document.getElementById('update-profile-modal').classList.add('hidden');
+                    alertBox.classList.add('hidden');
+                }, 2000);
+            } else {
+                alertBox.classList.add('bg-red-50', 'text-red-700');
+                alertBox.innerText = data.message || 'Error submitting request.';
+            }
+        })
+        .catch(err => {
+            alertBox.classList.remove('hidden');
+            alertBox.classList.add('bg-red-50', 'text-red-700');
+            alertBox.innerText = 'Something went wrong. Please try again.';
+        });
+    });
+
+    document.getElementById('change-password-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const alertBox = document.getElementById('password-alert');
+        
+        fetch('{{ route('password.update') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(async res => {
+            const data = await res.json();
+            alertBox.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+            if (data.success) {
+                alertBox.classList.add('bg-green-50', 'text-green-700');
+                alertBox.innerText = data.message;
+                setTimeout(() => {
+                    document.getElementById('change-password-modal').classList.add('hidden');
+                    alertBox.classList.add('hidden');
+                    document.getElementById('change-password-form').reset();
+                }, 2000);
+            } else {
+                alertBox.classList.add('bg-red-50', 'text-red-700');
+                alertBox.innerText = data.message || 'Error updating password.';
+            }
+        })
+        .catch(err => {
+            alertBox.classList.remove('hidden');
+            alertBox.classList.add('bg-red-50', 'text-red-700');
+            alertBox.innerText = 'Something went wrong. Please check your inputs.';
+        });
+    });
+</script>
+@endpush
