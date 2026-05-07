@@ -52,12 +52,19 @@ class ProfileUpdateRequestController extends Controller
         }
 
         $request->validate([
-            'email' => 'nullable|email|max:255',
+            'name' => 'nullable|string|max:255',
+            'f_name' => 'nullable|string|max:255',
+            'dob' => 'nullable|date',
             'mobile' => 'nullable|digits:10',
+            'email' => 'nullable|email|max:255',
+            'doj' => 'nullable|date',
+            'designation' => 'nullable|string|max:255',
+            'dept_id' => 'nullable|exists:departments,id',
+            'office_id' => 'nullable|exists:offices,id',
             'address' => 'nullable|string',
         ]);
 
-        $data = array_filter($request->only('email', 'mobile', 'address'));
+        $data = array_filter($request->only('name', 'f_name', 'dob', 'mobile', 'email', 'doj', 'designation', 'dept_id', 'office_id', 'address'));
 
         if (empty($data)) {
             return response()->json(['success' => false, 'message' => 'No data provided to update'], 400);
@@ -99,6 +106,13 @@ class ProfileUpdateRequestController extends Controller
 
             // Update StaffModel
             $staffUpdate = [];
+            if (isset($data['name'])) $staffUpdate['name'] = strtoupper($data['name']);
+            if (isset($data['f_name'])) $staffUpdate['f_name'] = strtoupper($data['f_name']);
+            if (isset($data['dob'])) $staffUpdate['dob'] = $data['dob'];
+            if (isset($data['doj'])) $staffUpdate['doj'] = $data['doj'];
+            if (isset($data['designation'])) $staffUpdate['designation'] = strtoupper($data['designation']);
+            if (isset($data['dept_id'])) $staffUpdate['dept_id'] = $data['dept_id'];
+            if (isset($data['office_id'])) $staffUpdate['office_id'] = $data['office_id'];
             if (isset($data['email'])) $staffUpdate['email'] = $data['email'];
             if (isset($data['mobile'])) $staffUpdate['mobile'] = $data['mobile'];
             if (isset($data['address'])) $staffUpdate['address'] = strtoupper($data['address']);
@@ -110,6 +124,7 @@ class ProfileUpdateRequestController extends Controller
             // Update User
             if ($staff->user_id) {
                 $userUpdate = [];
+                if (isset($data['name'])) $userUpdate['name'] = strtoupper($data['name']);
                 if (isset($data['email'])) $userUpdate['email'] = $data['email'];
                 if (isset($data['mobile']) && empty(User::find($staff->user_id)->email)) {
                     // if email is empty but mobile changed, not sure if we want to change password, but prompt said mobile id as password is not forced anymore.

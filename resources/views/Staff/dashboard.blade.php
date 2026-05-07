@@ -311,17 +311,57 @@
         </div>
         <form id="profile-update-form" class="space-y-4">
             @csrf
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
-                <input type="text" name="mobile" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->mobile ?? '' }}">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Email Address</label>
-                <input type="email" name="email" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ Auth::user()->email }}">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Address</label>
-                <textarea name="address" rows="3" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">{{ $staffDetail->address ?? '' }}</textarea>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" name="name" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->name ?? Auth::user()->name }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Father's Name</label>
+                    <input type="text" name="f_name" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->f_name ?? '' }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                    <input type="date" name="dob" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->dob ?? '' }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
+                    <input type="text" name="mobile" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->mobile ?? '' }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" name="email" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ Auth::user()->email }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date of Joining</label>
+                    <input type="date" name="doj" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->doj ?? '' }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Designation</label>
+                    <input type="text" name="designation" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border" value="{{ $staffDetail->designation ?? '' }}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Department</label>
+                    <select name="dept_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                        <option value="">Select Department</option>
+                        @foreach(\App\Models\Office\DepartmentModel::all() as $dept)
+                            <option value="{{ $dept->id }}" {{ ($staffDetail->dept_id ?? '') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Office</label>
+                    <select name="office_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                        <option value="">Select Office</option>
+                        @foreach(\App\Models\Office\OfficeModel::all() as $office)
+                            <option value="{{ $office->id }}" {{ ($staffDetail->office_id ?? '') == $office->id ? 'selected' : '' }}>{{ $office->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700">Address</label>
+                    <textarea name="address" rows="2" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">{{ $staffDetail->address ?? '' }}</textarea>
+                </div>
             </div>
             <div id="profile-alert" class="hidden rounded-md p-3 text-sm"></div>
             <div class="flex justify-end gap-2 pt-2">

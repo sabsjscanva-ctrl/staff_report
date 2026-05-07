@@ -38,7 +38,18 @@
                 <td class="px-4 py-3">
                     <ul class="list-disc list-inside text-gray-600 text-xs">
                         @foreach($req->requested_data as $key => $value)
-                            <li><strong>{{ ucfirst($key) }}:</strong> {{ $value }}</li>
+                            @php
+                                $displayKey = ucfirst(str_replace('_', ' ', $key));
+                                $displayValue = $value;
+                                if ($key === 'dept_id' && $value) {
+                                    $displayKey = 'Department';
+                                    $displayValue = \App\Models\Office\DepartmentModel::find($value)?->name ?? $value;
+                                } elseif ($key === 'office_id' && $value) {
+                                    $displayKey = 'Office';
+                                    $displayValue = \App\Models\Office\OfficeModel::find($value)?->name ?? $value;
+                                }
+                            @endphp
+                            <li><strong>{{ $displayKey }}:</strong> {{ $displayValue }}</li>
                         @endforeach
                     </ul>
                 </td>
