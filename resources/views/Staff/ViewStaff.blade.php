@@ -230,9 +230,9 @@
 
 {{-- Table --}}
 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto max-h-[75vh] relative scroll-smooth shadow-inner">
         <table class="min-w-full text-sm text-left">
-            <thead>
+            <thead class="sticky top-0 z-20">
                 <tr class="bg-gray-50 border-b border-gray-100">
                     <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
                     <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Photo</th>
@@ -245,7 +245,7 @@
                     <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
                     <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">DOJ</th>
                     <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Actions</th>
+                    <th class="sticky right-0 px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center bg-gray-50 z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">Actions</th>
                 </tr>
             </thead>
             <tbody id="staff-table-body" class="divide-y divide-gray-50">
@@ -419,8 +419,8 @@
                         ${s.left_date ? `<span class="text-xs opacity-70">(${fmtDate(s.left_date)})</span>` : ''}
                     </span>
                 </td>
-                <td class="px-4 py-3 text-center">
-                    <div class="flex items-center justify-center gap-1.5 opacity-70 group-hover:opacity-100 transition flex-wrap">
+                <td class="sticky right-0 px-4 py-3 text-center bg-white group-hover:bg-indigo-50 transition-colors z-10 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                    <div class="flex items-center justify-center gap-1.5 opacity-70 group-hover:opacity-100 transition flex-wrap min-w-[180px]">
                         <a href="/staff/create?id=${s.id}"
                             class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700
                                    text-xs font-medium px-2.5 py-1.5 rounded-lg transition">
