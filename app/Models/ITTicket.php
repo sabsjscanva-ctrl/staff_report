@@ -21,11 +21,18 @@ class ITTicket extends Model
         'status',
         'expected_arrival_time',
         'remarks',
+        'started_at',
+        'completed_at',
+        'total_seconds_spent',
+        'last_status_change_at',
     ];
 
     protected $casts = [
         'expected_arrival_time' => 'datetime',
         'photos'                => 'array',
+        'started_at'            => 'datetime',
+        'completed_at'          => 'datetime',
+        'last_status_change_at' => 'datetime',
     ];
 
     public function staff()

@@ -109,6 +109,8 @@ Route::middleware('auth')->prefix('it-tickets')->name('it-tickets.')->group(func
     Route::get('/', [ITTicketController::class, 'index'])->name('index');
     Route::get('/create', [ITTicketController::class, 'create'])->name('create');
     Route::post('/', [ITTicketController::class, 'store'])->name('store');
+    Route::get('/report', [ITTicketController::class, 'report'])->name('report');
+    Route::get('/report/export', [ITTicketController::class, 'exportReport'])->name('report.export');
     Route::get('/{itTicket}', [ITTicketController::class, 'show'])->name('show');
     Route::post('/{itTicket}/reply', [ITTicketController::class, 'reply'])->name('reply');
     Route::post('/{itTicket}/status', [ITTicketController::class, 'updateStatus'])->name('update-status');

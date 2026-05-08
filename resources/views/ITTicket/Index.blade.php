@@ -25,6 +25,13 @@
                 </svg>
                 Raise Ticket
             </a>
+            @if(Auth::user()->canAccessIT() || Auth::user()->is_admin || Auth::user()->is_manager)
+            <a href="{{ route('it-tickets.report') }}" 
+               class="inline-flex items-center justify-center px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-[0.15em] rounded-[1.5rem] shadow-xl shadow-slate-100 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 gap-3 group">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m3.25-10.75a2.5 2.5 0 115 0 2.5 2.5 0 01-5 0zM17 11V9a2 2 0 00-2-2M9 5a2 2 0 012-2h2a2 2 0 012 2m0 0v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Report Hub
+            </a>
+            @endif
         </div>
     </div>
 

@@ -23,7 +23,13 @@
                         $bg = $statusColors[$itTicket->status] ?? 'bg-slate-400';
                     @endphp
                     <span class="w-1.5 h-1.5 rounded-full {{ $bg }} animate-pulse"></span>
-                    <span class="text-[10px] font-bold text-slate-600 uppercase">{{ $itTicket->status }}</span>
+                    <span class="text-[10px] font-bold text-slate-600 uppercase">
+                        @if($itTicket->status === 'In Progress') START (IN PROGRESS)
+                        @elseif($itTicket->status === 'Completed') END (COMPLETED)
+                        @elseif($itTicket->status === 'Paused') PAUSED
+                        @else {{ $itTicket->status }}
+                        @endif
+                    </span>
                 </div>
                 <h1 class="text-xl font-black text-slate-900 tracking-tight leading-tight">{{ $itTicket->subject }}</h1>
             </div>
@@ -109,6 +115,7 @@
                 </div>
 
                 <!-- Quick Reply -->
+                @if($itTicket->status !== 'Completed')
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                     <form action="{{ route('it-tickets.reply', $itTicket->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                         @csrf
@@ -126,6 +133,13 @@
                         </div>
                     </form>
                 </div>
+                @else
+                <div class="bg-emerald-50 rounded-2xl border border-emerald-100 p-6 text-center">
+                    <svg class="w-10 h-10 text-emerald-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <h4 class="text-sm font-black text-emerald-800 uppercase">Ticket Resolved</h4>
+                    <p class="text-xs text-emerald-600 font-bold mt-1">Ab aap is ticket par chat nahi kar sakte.</p>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -189,6 +203,43 @@
                 <p class="text-xs text-amber-900 font-bold leading-relaxed">{{ $itTicket->remarks }}</p>
             </div>
             @endif
+
+            <!-- Time Tracking Report -->
+            <div class="bg-slate-900 rounded-2xl p-5 text-white shadow-xl shadow-slate-100 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Resolution Time</h4>
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-slate-400">Started At</span>
+                        <span class="text-xs font-black">{{ $itTicket->started_at ? $itTicket->started_at->format('d M, h:i A') : '--' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-slate-400">Completed At</span>
+                        <span class="text-xs font-black">{{ $itTicket->completed_at ? $itTicket->completed_at->format('d M, h:i A') : '--' }}</span>
+                    </div>
+                    <div class="pt-3 border-t border-white/10 flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-indigo-400">Total Time Spent</span>
+                        <span class="text-sm font-black text-indigo-400">
+                            @php
+                                $seconds = $itTicket->total_seconds_spent;
+                                if ($itTicket->status === 'In Progress' && $itTicket->last_status_change_at) {
+                                    $seconds += now()->diffInSeconds($itTicket->last_status_change_at);
+                                }
+                                $hours = floor($seconds / 3600);
+                                $minutes = floor(($seconds % 3600) / 60);
+                                if ($seconds > 0 && $seconds < 60) $minutes = 1;
+                                $displayTime = "";
+                                if($hours > 0) $displayTime .= $hours . "h ";
+                                $displayTime .= $minutes . "m";
+                            @endphp
+                            {{ $displayTime }}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -207,12 +258,12 @@
             <form action="{{ route('it-tickets.update-status', $itTicket->id) }}" method="POST" class="space-y-4">
                 @csrf
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Current State</label>
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Update Status</label>
                     <select name="status" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 appearance-none">
-                        <option value="Pending" {{ $itTicket->status === 'Pending' ? 'selected' : '' }}>PENDING</option>
-                        <option value="In Progress" {{ $itTicket->status === 'In Progress' ? 'selected' : '' }}>IN PROGRESS</option>
-                        <option value="Completed" {{ $itTicket->status === 'Completed' ? 'selected' : '' }}>COMPLETED</option>
-                        <option value="Paused" {{ $itTicket->status === 'Paused' ? 'selected' : '' }}>PAUSED</option>
+                        <option value="Pending" {{ $itTicket->status === 'Pending' ? 'selected' : '' }}>PENDING (AWAITING)</option>
+                        <option value="In Progress" {{ $itTicket->status === 'In Progress' ? 'selected' : '' }}>START (IN PROGRESS)</option>
+                        <option value="Paused" {{ $itTicket->status === 'Paused' ? 'selected' : '' }}>PAUSE</option>
+                        <option value="Completed" {{ $itTicket->status === 'Completed' ? 'selected' : '' }}>END (SOLVED)</option>
                     </select>
                 </div>
 

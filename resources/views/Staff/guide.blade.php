@@ -53,6 +53,18 @@
             <li>Naya password enter karein aur use confirm karke <strong>Save</strong> karein.</li>
         </ul>
     </div>
+
+    {{-- Step 5: IT Support Ticket --}}
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold mb-4">5</div>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">IT Support Ticket Kaise Raise Karein?</h3>
+        <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+            <li>Dashboard par <strong>"IT Support"</strong> section mein jayein.</li>
+            <li><strong>"Create New Ticket"</strong> par click karke apni hardware ya software problem ki details likhein.</li>
+            <li>Error ya problem ki <strong>Photos</strong> upload karein (Evidence ke liye).</li>
+            <li>Ticket ka <strong>Current Status</strong> aur IT team ke remarks track karein.</li>
+        </ul>
+    </div>
 </div>
 
 <div class="mt-8 bg-indigo-600 p-8 rounded-2xl text-white text-center shadow-lg shadow-indigo-200">

@@ -28,6 +28,71 @@ class ITTicketController extends Controller
         return view('ITTicket.Index', compact('tickets'));
     }
 
+    public function report(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->canAccessIT() && !$user->is_admin && !$user->is_manager) {
+            abort(403);
+        }
+
+        $query = ITTicket::with(['staff', 'itStaff']);
+
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        if (!$request->has('start_date') && !$request->has('end_date')) {
+            $query->whereDate('created_at', now());
+        }
+
+        if ($request->has('staff_id') && $request->staff_id) {
+            $query->where('staff_id', $request->staff_id);
+        }
+
+        $tickets = $query->latest()->get();
+        $allStaff = \App\Models\User::all(); // Simplified for now
+
+        return view('ITTicket.Report', compact('tickets', 'allStaff'));
+    }
+
+    public function exportReport(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->canAccessIT() && !$user->is_admin && !$user->is_manager) {
+            abort(403);
+        }
+
+        $type = $request->get('type', 'excel');
+        $query = ITTicket::with(['staff', 'itStaff']);
+
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        if ($request->has('staff_id') && $request->staff_id) {
+            $query->where('staff_id', $request->staff_id);
+        }
+
+        $tickets = $query->latest()->get();
+
+        if ($tickets->isEmpty()) {
+            return back()->with('error', 'No data found to export.');
+        }
+
+        if ($type === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ITTicket.ReportPdf', compact('tickets'));
+            return $pdf->download('IT_Support_Report_' . now()->format('YmdHis') . '.pdf');
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\ITTicketExport($tickets), 'IT_Support_Report_' . now()->format('YmdHis') . '.xlsx');
+    }
+
     public function create()
     {
         return view('ITTicket.Create');
@@ -95,6 +160,10 @@ class ITTicketController extends Controller
             $attachmentPath = $request->file('attachment')->store('it_tickets/replies', 'public');
         }
 
+        if ($itTicket->status === 'Completed') {
+            return back()->with('error', 'Ticket complete ho gaya hai, ab aap chat nahi kar sakte.');
+        }
+
         $itTicket->replies()->create([
             'user_id'    => $user->id,
             'message'    => $request->message,
@@ -115,11 +184,39 @@ class ITTicketController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        $oldStatus = $itTicket->status;
+        $newStatus = $request->status;
+        $now = now();
+
         $data = [
-            'status'      => $request->status,
+            'status'      => $newStatus,
             'remarks'     => $request->remarks,
             'it_staff_id' => Auth::id(),
         ];
+
+        // Time Tracking Logic
+        if ($newStatus === 'Completed') {
+            $data['completed_at'] = $now;
+            
+            if ($oldStatus === 'In Progress') {
+                // Calculate time from last "Start"
+                $seconds = $now->diffInSeconds($itTicket->last_status_change_at ?? $itTicket->created_at);
+                $data['total_seconds_spent'] = $itTicket->total_seconds_spent + $seconds;
+            } elseif (!$itTicket->started_at || $itTicket->total_seconds_spent == 0) {
+                // Fallback: If never formally started, calculate from creation to completion
+                $data['started_at'] = $itTicket->started_at ?? $itTicket->created_at;
+                $data['total_seconds_spent'] = $now->diffInSeconds($data['started_at']);
+            }
+        } elseif ($newStatus === 'In Progress') {
+            $data['last_status_change_at'] = $now;
+            if (!$itTicket->started_at) {
+                $data['started_at'] = $now;
+            }
+        } elseif ($newStatus === 'Paused' && $oldStatus === 'In Progress') {
+            // Calculate time spent in the last session before pausing
+            $seconds = $now->diffInSeconds($itTicket->last_status_change_at ?? $itTicket->created_at);
+            $data['total_seconds_spent'] = $itTicket->total_seconds_spent + $seconds;
+        }
 
         $itTicket->update($data);
 
