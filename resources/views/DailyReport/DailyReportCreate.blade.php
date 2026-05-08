@@ -265,13 +265,17 @@
                     <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Task #<span class="task-num">${index + 1}</span></span>
                     ${isCarry ? '<span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded uppercase tracking-tighter border border-amber-200">Continued Task</span>' : ''}
                 </div>
+                ${!isCarry ? `
                 <button type="button" onclick="removeTask(${index})"
                         class="text-red-400 hover:text-red-600 transition" title="Remove Task">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
-                </button>
+                </button>` : ''}
             </div>
+
+            <input type="hidden" name="tasks[${index}][is_carry]" value="${isCarry}">
+            <input type="hidden" name="tasks[${index}][previous_time]" value="${data.previous_time || ''}">
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -312,9 +316,16 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Time Spend <span class="text-red-500">*</span>
-                    </label>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Time Spend <span class="text-red-500">*</span>
+                        </label>
+                        ${isCarry && data.previous_time ? `
+                        <div class="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[9px] font-bold text-gray-500 border border-gray-200">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Prev: ${data.previous_time}
+                        </div>` : ''}
+                    </div>
                     <div class="flex gap-2">
                         <div class="flex-1 relative">
                             <input type="number" name="tasks[${index}][hours]"
@@ -444,8 +455,11 @@
         document.querySelectorAll('.task-row').forEach(row => {
             const rowData = {};
             row.querySelectorAll('input, textarea, select').forEach(el => {
-                const match = el.name && el.name.match(/tasks\[\d+\]\[(.+)\]/);
-                if (match) rowData[match[1]] = el.value;
+                const nameMatch = el.name && el.name.match(/tasks\[\d+\]\[(.+)\]/);
+                if (nameMatch) {
+                    const fieldName = nameMatch[1];
+                    rowData[fieldName] = el.value;
+                }
             });
             
             // Format time string from split inputs

@@ -140,10 +140,12 @@ class DailyReportController extends Controller
                 foreach ($request->tasks as $task) {
                     if (!empty($task['task_title'])) {
                         $report->tasks()->create([
-                            'task_title'  => $task['task_title'],
-                            'description' => $task['description'] ?? null,
-                            'status'      => $task['status'] ?? 'pending',
-                            'time_spend'  => $task['time_spend'] ?? null,
+                            'task_title'   => $task['task_title'],
+                            'description'  => $task['description'] ?? null,
+                            'is_carry'     => isset($task['is_carry']) && ($task['is_carry'] === 'true' || $task['is_carry'] === true),
+                            'previous_time' => $task['previous_time'] ?? null,
+                            'status'       => $task['status'] ?? 'pending',
+                            'time_spend'   => $task['time_spend'] ?? null,
                         ]);
                     }
                 }
@@ -176,10 +178,12 @@ class DailyReportController extends Controller
                 'email' => $dailyReport->staff->email,
             ] : null,
             'tasks'        => $dailyReport->tasks->map(fn($t) => [
-                'task_title'  => $t->task_title,
-                'description' => $t->description,
-                'status'      => $t->status,
-                'time_spend'  => $t->time_spend,
+                'task_title'    => $t->task_title,
+                'description'   => $t->description,
+                'is_carry'      => $t->is_carry,
+                'previous_time'  => $t->previous_time,
+                'status'        => $t->status,
+                'time_spend'    => $t->time_spend,
             ])->values()->toArray(),
         ]);
     }
@@ -227,10 +231,12 @@ class DailyReportController extends Controller
                 foreach ($request->tasks as $task) {
                     if (!empty($task['task_title'])) {
                         $dailyReport->tasks()->create([
-                            'task_title'  => $task['task_title'],
-                            'description' => $task['description'] ?? null,
-                            'status'      => $task['status'] ?? 'pending',
-                            'time_spend'  => $task['time_spend'] ?? null,
+                            'task_title'    => $task['task_title'],
+                            'description'   => $task['description'] ?? null,
+                            'is_carry'      => isset($task['is_carry']) && ($task['is_carry'] === 'true' || $task['is_carry'] === true),
+                            'previous_time'  => $task['previous_time'] ?? null,
+                            'status'        => $task['status'] ?? 'pending',
+                            'time_spend'    => $task['time_spend'] ?? null,
                         ]);
                     }
                 }
@@ -281,11 +287,32 @@ class DailyReportController extends Controller
             'success' => true,
             'pending_task' => $lastReport->planned_task,
             'tasks' => $lastReport->tasks->map(fn($t) => [
-                'task_title' => $t->task_title,
-                'description' => $t->description,
-                'status' => $t->status,
-                'time_spend' => '' 
+                'task_title'    => $t->task_title,
+                'description'   => $t->description,
+                'status'        => $t->status,
+                'is_carry'      => true,
+                'previous_time' => $this->sumTimeStrings($t->previous_time, $t->time_spend),
+                'time_spend'    => '' 
             ])
         ]);
+    }
+
+    private function sumTimeStrings($time1, $time2)
+    {
+        $totalMinutes = 0;
+        foreach ([$time1, $time2] as $timeStr) {
+            if (!$timeStr) continue;
+            $ts = strtolower($timeStr);
+            if (preg_match('/(\d+)\s*h/', $ts, $m)) $totalMinutes += (int)$m[1] * 60;
+            if (preg_match('/(\d+)\s*m/', $ts, $m)) $totalMinutes += (int)$m[1];
+            if (preg_match('/(\d+):(\d+)/', $ts, $m)) $totalMinutes += (int)$m[1] * 60 + (int)$m[2];
+        }
+
+        if ($totalMinutes === 0) return '';
+        
+        $h = floor($totalMinutes / 60);
+        $m = $totalMinutes % 60;
+        
+        return ($h > 0 ? $h . 'h ' : '') . ($m > 0 ? $m . 'm' : '');
     }
 }

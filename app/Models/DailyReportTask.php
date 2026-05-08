@@ -13,6 +13,8 @@ class DailyReportTask extends Model
         'daily_report_id',
         'task_title',
         'description',
+        'is_carry',
+        'previous_time',
         'status',
         'time_spend',
     ];

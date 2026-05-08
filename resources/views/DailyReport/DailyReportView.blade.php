@@ -456,34 +456,82 @@
             const tm = totalMinutes % 60;
             const totalStr = (th > 0 ? th + 'h ' : '') + (tm > 0 ? tm + 'm' : '') || '—';
 
-            const tasksHtml = d.tasks && d.tasks.length > 0
-                ? `<div class="flex items-center justify-between mb-3 bg-indigo-50 rounded-lg px-3 py-2 border border-indigo-100">
-                       <div>
-                           <p class="text-xs font-semibold text-indigo-700 uppercase tracking-wider">Tasks (${d.tasks.length})</p>
-                           <p class="text-[10px] text-indigo-500 font-medium">${d.tasks.filter(t=>t.status==='completed').length} completed</p>
-                       </div>
-                       <div class="text-right">
-                           <p class="text-xs font-semibold text-indigo-700 uppercase tracking-wider">Total Time</p>
-                           <p class="text-sm font-bold text-indigo-800">${totalStr}</p>
-                       </div>
-                   </div>
-                   <div class="space-y-2.5">
-                   ${d.tasks.map((t, i) => `
-                    <div class="flex items-start gap-3 border border-gray-100 rounded-xl p-3.5 bg-gray-50 hover:bg-white transition">
-                        <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">${i+1}</div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-start justify-between gap-2">
+            const carryTasks = (d.tasks || []).filter(t => t.is_carry);
+            const newTasks   = (d.tasks || []).filter(t => !t.is_carry);
+
+            const renderTask = (t, i, typeLabel) => `
+                <div class="flex items-start gap-3 border ${t.is_carry ? 'border-amber-100 bg-amber-50/30' : 'border-gray-100 bg-gray-50'} rounded-xl p-3.5 hover:bg-white transition group">
+                    <div class="w-6 h-6 rounded-full ${t.is_carry ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'} flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">${i+1}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
                                 <p class="font-semibold text-gray-800 text-sm leading-tight">${esc(t.task_title)}</p>
-                                <span class="flex-shrink-0 px-2 py-0.5 rounded-lg text-xs font-semibold ${statusBadge[t.status]||''}">${statusLabel[t.status]||t.status}</span>
+                                ${t.is_carry ? `<span class="text-[9px] font-bold text-amber-600 uppercase tracking-tighter bg-amber-100/50 px-1.5 py-0.5 rounded mt-1 inline-block">Continued Task</span>` : ''}
                             </div>
-                            ${t.description ? `<p class="text-xs text-gray-500 mt-1 leading-relaxed">${esc(t.description)}</p>` : ''}
-                            ${t.time_spend  ? `<div class="flex items-center gap-1 mt-1.5"><svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="text-xs text-gray-400">${esc(t.time_spend)}</span></div>` : ''}
+                            <span class="flex-shrink-0 px-2 py-0.5 rounded-lg text-xs font-semibold ${statusBadge[t.status]||''}">${statusLabel[t.status]||t.status}</span>
                         </div>
-                    </div>`).join('')}
-                   </div>`
-                : `<div class="text-center py-8 text-gray-400">
-                       <p class="text-xs">No tasks added</p>
-                   </div>`;
+                        ${t.description ? `<p class="text-xs text-gray-500 mt-1.5 leading-relaxed">${esc(t.description)}</p>` : ''}
+                        
+                        <div class="flex items-center gap-3 mt-2">
+                            ${t.is_carry && t.previous_time ? `
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-[10px] text-gray-400 font-medium">Prev: <span class="text-gray-600">${esc(t.previous_time)}</span></span>
+                                </div>
+                            ` : ''}
+                            ${t.time_spend ? `
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-[10px] text-indigo-500 font-bold">${t.is_carry ? 'Today: ' : ''}${esc(t.time_spend)}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>`;
+
+            let tasksHtml = `
+                <div class="flex items-center justify-between mb-4 bg-slate-900 rounded-xl px-4 py-3 text-white">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Progress</p>
+                        <p class="text-xs font-medium text-slate-300 mt-0.5">${(d.tasks||[]).filter(t=>t.status==='completed').length}/${(d.tasks||[]).length} tasks completed</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Time</p>
+                        <p class="text-lg font-bold text-indigo-400">${totalStr}</p>
+                    </div>
+                </div>`;
+
+            if (carryTasks.length > 0) {
+                tasksHtml += `
+                    <div class="mb-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Continued Tasks</span>
+                            <div class="h-px flex-1 bg-amber-100"></div>
+                        </div>
+                        <div class="space-y-2.5">
+                            ${carryTasks.map((t, i) => renderTask(t, i)).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            if (newTasks.length > 0) {
+                tasksHtml += `
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Today's New Tasks</span>
+                            <div class="h-px flex-1 bg-indigo-100"></div>
+                        </div>
+                        <div class="space-y-2.5">
+                            ${newTasks.map((t, i) => renderTask(t, carryTasks.length + i)).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            if ((d.tasks || []).length === 0) {
+                tasksHtml = `<div class="text-center py-12 text-gray-400 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
+                    <p class="text-xs font-medium">No tasks logged for this report</p>
+                </div>`;
+            }
 
             document.getElementById('detail-content').innerHTML = infoGrid + tasksHtml;
         } catch (e) {
