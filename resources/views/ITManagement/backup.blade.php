@@ -62,7 +62,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l6-6a1 1 0 00-1.414-1.414l-5.293 5.293-2.293-2.293z" />
             </svg>
-            Save Changes
+            Save All
         </button>
     </div>
 </div>
@@ -81,45 +81,46 @@
 <form action="{{ route('it-management.backup.store') }}" method="POST" id="bulkBackupForm">
     @csrf
     <div class="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
-        <div class="bg-[#FFFF00] p-4 text-center border-b border-slate-200">
-            <h1 class="text-xl md:text-2xl font-black text-black uppercase tracking-[0.2em]">
+        <div class="bg-[#FFFF00] p-5 text-center border-b border-slate-200">
+            <h1 class="text-2xl md:text-3xl font-black text-black uppercase tracking-[0.25em]">
                 STAFF DATA BACKUP RECORD (MONTHLY REPORT) {{ strtoupper($months[(int)$selectedMonth]) }} {{ $selectedYear }}
             </h1>
         </div>
         
         <div class="overflow-x-auto excel-container">
-            <table class="w-full text-left border-collapse min-w-[1200px]">
+            <table class="w-full text-left border-collapse min-w-[1500px]">
                 <thead>
                     <tr class="bg-slate-50">
-                        <th class="px-2 py-4 text-[10px] font-black text-slate-400 uppercase border-r border-slate-200 sticky left-0 bg-slate-50 z-30 w-10 text-center">SR</th>
-                        <th class="px-4 py-4 text-[10px] font-black text-slate-700 uppercase border-r border-slate-200 sticky left-10 bg-slate-50 z-30 min-w-[180px]">Staff Name</th>
+                        <th class="px-2 py-5 text-[11px] font-black text-slate-400 uppercase border-r border-slate-200 sticky left-0 bg-slate-50 z-30 w-12 text-center border-b">SR</th>
+                        <th class="px-6 py-5 text-[11px] font-black text-slate-700 uppercase border-r border-slate-200 sticky left-12 bg-slate-50 z-30 min-w-[220px] border-b">Staff Name</th>
                         
                         @foreach($saturdays as $sat)
-                            <th colspan="3" class="px-2 py-4 text-[10px] font-black text-slate-700 uppercase border-r border-slate-200 text-center bg-slate-100/50">
+                            <th colspan="4" class="px-2 py-5 text-[11px] font-black text-slate-700 uppercase border-r border-slate-200 text-center bg-slate-100/50 border-b">
                                 {{ $sat->format('d-m-Y') }} (SATURDAY)
                             </th>
                         @endforeach
                     </tr>
                     <tr class="bg-slate-50/50">
-                        <th class="sticky left-0 bg-slate-50 z-20 border-r border-slate-200 border-b border-slate-200"></th>
-                        <th class="sticky left-10 bg-slate-50 z-20 border-r border-slate-200 border-b border-slate-200"></th>
+                        <th class="sticky left-0 bg-slate-50 z-20 border-r border-slate-200 border-b"></th>
+                        <th class="sticky left-12 bg-slate-50 z-20 border-r border-slate-200 border-b"></th>
                         
                         @foreach($saturdays as $sat)
-                            <th class="px-1 py-2 text-[9px] font-bold text-slate-400 uppercase border-r border-slate-100 text-center border-b border-slate-200 w-24">Status</th>
-                            <th class="px-1 py-2 text-[9px] font-bold text-slate-400 uppercase border-r border-slate-100 text-center border-b border-slate-200 w-32">Location</th>
-                            <th class="px-1 py-2 text-[9px] font-bold text-slate-400 uppercase border-r border-slate-200 text-center border-b border-slate-200 min-w-[150px]">Remark</th>
+                            <th class="px-2 py-3 text-[10px] font-bold text-slate-400 uppercase border-r border-slate-100 text-center border-b w-28">Status</th>
+                            <th class="px-2 py-3 text-[10px] font-bold text-slate-400 uppercase border-r border-slate-100 text-center border-b w-40">Location</th>
+                            <th class="px-2 py-3 text-[10px] font-bold text-slate-400 uppercase border-r border-slate-100 text-center border-b min-w-[180px]">Remark</th>
+                            <th class="px-2 py-3 text-[10px] font-bold text-slate-400 uppercase border-r border-slate-200 text-center border-b w-28">Date</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($staffs as $index => $staff)
                     <tr class="hover:bg-slate-50/50 transition-colors group">
-                        <td class="px-2 py-3 text-[11px] font-bold text-slate-300 border-r border-slate-100 sticky left-0 bg-white group-hover:bg-slate-50 z-20 text-center">
+                        <td class="px-2 py-4 text-xs font-bold text-slate-300 border-r border-slate-100 sticky left-0 bg-white group-hover:bg-slate-50 z-20 text-center">
                             {{ $index + 1 }}
                         </td>
-                        <td class="px-4 py-3 border-r border-slate-100 sticky left-10 bg-white group-hover:bg-slate-50 z-20">
-                            <div class="text-[11px] font-black text-slate-800 uppercase tracking-tight">{{ $staff->name }}</div>
-                            <div class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{{ $staff->department->dept_name ?? 'NO DEPT' }}</div>
+                        <td class="px-6 py-4 border-r border-slate-100 sticky left-12 bg-white group-hover:bg-slate-50 z-20">
+                            <div class="text-xs font-black text-slate-800 uppercase tracking-tight">{{ $staff->name }}</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{{ $staff->department->dept_name ?? 'NO DEPT' }}</div>
                         </td>
                         
                         @php
@@ -137,27 +138,37 @@
                             
                             <!-- Status Cell -->
                             <td class="p-0 border-r border-slate-100 text-center align-middle focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500/30">
-                                <select name="{{ $prefix }}[status]" class="w-full h-10 bg-transparent border-none text-[10px] font-black text-center focus:ring-0 cursor-pointer appearance-none">
+                                <select name="{{ $prefix }}[status]" class="w-full h-12 bg-transparent border-none text-[11px] font-black text-center focus:ring-0 cursor-pointer">
                                     <option value="">-</option>
-                                    <option value="YES" {{ ($backup && $backup->status == 'YES') ? 'selected' : '' }}>YES</option>
-                                    <option value="NO" {{ ($backup && $backup->status == 'NO') ? 'selected' : '' }}>NO</option>
+                                    <option value="YES" {{ ($backup && ($backup->status == 'YES' || $backup->status == 'Completed')) ? 'selected' : '' }}>YES</option>
+                                    <option value="NO" {{ ($backup && ($backup->status == 'NO' || $backup->status == 'Failed')) ? 'selected' : '' }}>NO</option>
                                     <option value="NA" {{ ($backup && $backup->status == 'NA') ? 'selected' : '' }}>NA</option>
-                                    <option value="Completed" {{ ($backup && $backup->status == 'Completed') ? 'selected' : '' }}>YES</option>
                                 </select>
                             </td>
                             
                             <!-- Location Cell -->
                             <td class="p-0 border-r border-slate-100 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500/30">
-                                <input type="text" name="{{ $prefix }}[location]" value="{{ $backup->location ?? '' }}" 
-                                    class="w-full h-10 bg-transparent border-none text-[10px] font-medium text-slate-600 focus:ring-0 px-2" 
-                                    placeholder="...">
+                                <select name="{{ $prefix }}[location]" class="w-full h-12 bg-transparent border-none text-[10px] font-bold text-slate-600 focus:ring-0 px-2 cursor-pointer">
+                                    <option value="">- Select -</option>
+                                    <option value="DRIVE" {{ ($backup && $backup->location == 'DRIVE') ? 'selected' : '' }}>DRIVE</option>
+                                    <option value="HDD" {{ ($backup && $backup->location == 'HDD') ? 'selected' : '' }}>HDD</option>
+                                    <option value="PENDRIVE" {{ ($backup && $backup->location == 'PENDRIVE') ? 'selected' : '' }}>PENDRIVE</option>
+                                    <option value="PENDRIVE/DRIVE" {{ ($backup && $backup->location == 'PENDRIVE/DRIVE') ? 'selected' : '' }}>PENDRIVE/DRIVE</option>
+                                    <option value="LAPTOP" {{ ($backup && $backup->location == 'LAPTOP') ? 'selected' : '' }}>LAPTOP</option>
+                                    <option value="SOFTWARE" {{ ($backup && $backup->location == 'SOFTWARE') ? 'selected' : '' }}>SOFTWARE</option>
+                                </select>
                             </td>
                             
                             <!-- Remark Cell -->
-                            <td class="p-0 border-r border-slate-200 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500/30">
+                            <td class="p-0 border-r border-slate-100 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500/30">
                                 <input type="text" name="{{ $prefix }}[remark]" value="{{ $backup->remark ?? '' }}" 
-                                    class="w-full h-10 bg-transparent border-none text-[10px] text-slate-500 italic focus:ring-0 px-2" 
-                                    placeholder="...">
+                                    class="w-full h-12 bg-transparent border-none text-[11px] text-slate-500 font-medium focus:ring-0 px-3 placeholder:text-slate-300" 
+                                    placeholder="Add remark...">
+                            </td>
+
+                            <!-- Date Cell (Readonly but sent in form) -->
+                            <td class="p-0 border-r border-slate-200 bg-slate-50/30 text-center">
+                                <span class="text-[10px] font-bold text-slate-400">{{ $sat->format('d-m-Y') }}</span>
                             </td>
                         @endforeach
                     </tr>
@@ -167,65 +178,79 @@
         </div>
     </div>
 
-    <!-- Floating Save Button for Mobile/Large Sheets -->
-    <div class="fixed bottom-8 right-8 z-50">
-        <button type="submit" class="group flex items-center gap-3 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-2xl shadow-slate-900/40 hover:bg-black transition-all active:scale-95">
-            <span class="bg-indigo-500 p-1.5 rounded-lg group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l6-6a1 1 0 00-1.414-1.414l-5.293 5.293-2.293-2.293z" />
+    <!-- Floating Save Button -->
+    <div class="fixed bottom-10 right-10 z-50">
+        <button type="submit" class="group flex items-center gap-4 px-10 py-5 bg-slate-900 text-white font-black rounded-3xl shadow-2xl shadow-slate-900/60 hover:bg-black transition-all active:scale-95 border-4 border-white/10 backdrop-blur-md">
+            <span class="bg-indigo-500 p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/40">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                 </svg>
             </span>
-            Save All Entries
+            <span class="uppercase tracking-widest text-sm">Update Sheets</span>
         </button>
     </div>
 </form>
 
 <style>
-    /* Spreadsheet Feel */
+    /* Premium Excel Scrollbar */
     .excel-container {
         scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 #f1f5f9;
+        scrollbar-color: #cbd5e1 #f8fafc;
     }
     
     .excel-container::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
+        height: 10px;
+        width: 10px;
     }
     .excel-container::-webkit-scrollbar-track {
         background: #f8fafc;
+        border-radius: 5px;
     }
     .excel-container::-webkit-scrollbar-thumb {
         background: #cbd5e1;
-        border-radius: 4px;
+        border-radius: 5px;
+        border: 2px solid #f8fafc;
+    }
+    .excel-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
     
-    /* Input Styling */
+    /* Spreadsheet Inputs */
     input[type="text"]:focus, select:focus {
-        background-color: #fdfdfd;
+        background-color: #ffffff;
+        box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.2);
     }
     
-    /* Alternating row colors like Excel */
+    /* Excel Alternating Rows */
     tbody tr:nth-child(even) {
-        background-color: #fafafa;
+        background-color: #fcfcfc;
     }
     
-    /* Highlight cell on hover */
+    /* Grid Hover Effect */
     td:hover {
-        background-color: #f0f4ff;
+        background-color: #f1f5ff !important;
     }
 
-    /* Sticky fixes for complex table */
+    /* Fixed Layout Help */
     .sticky {
         position: sticky !important;
     }
     
-    thead th {
-        border-top: 1px solid #e2e8f0;
+    /* Custom Dropdown Styling */
+    select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2rem;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
     }
 </style>
 
 <script>
-    // Keyboard navigation (Arrow keys)
+    // Keyboard Navigation for Power Users
     document.addEventListener('keydown', function(e) {
         const active = document.activeElement;
         if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'SELECT')) return;
@@ -237,12 +262,14 @@
         const colIndex = Array.from(row.children).indexOf(cell);
         
         if (e.key === 'ArrowDown') {
+            e.preventDefault();
             const nextRow = row.nextElementSibling;
             if (nextRow) {
                 const nextInput = nextRow.children[colIndex].querySelector('input, select');
                 if (nextInput) nextInput.focus();
             }
         } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
             const prevRow = row.previousElementSibling;
             if (prevRow) {
                 const prevInput = prevRow.children[colIndex].querySelector('input, select');
