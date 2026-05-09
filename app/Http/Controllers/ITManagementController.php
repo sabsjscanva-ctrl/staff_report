@@ -52,6 +52,27 @@ class ITManagementController extends Controller
 
     public function backupStore(Request $request)
     {
+        if ($request->has('backups')) {
+            $count = 0;
+            foreach ($request->backups as $staffId => $dates) {
+                foreach ($dates as $date => $details) {
+                    // Only process if status is set (YES, NO, NA, etc)
+                    if (!empty($details['status'])) {
+                        SystemBackup::updateOrCreate(
+                            ['staff_id' => $staffId, 'backup_date' => $date],
+                            [
+                                'status' => $details['status'],
+                                'location' => $details['location'] ?? null,
+                                'remark' => $details['remark'] ?? null,
+                            ]
+                        );
+                        $count++;
+                    }
+                }
+            }
+            return back()->with('success', "Updated $count backup records successfully.");
+        }
+
         $data = $request->validate([
             'staff_id' => 'required|exists:staff_details,id',
             'status' => 'nullable|string',
