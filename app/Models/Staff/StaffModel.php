@@ -26,6 +26,7 @@ class StaffModel extends Model
         'photo',
         'status',
         'left_date',
+        'backup_sequence',
     ];
 
     public function department()
