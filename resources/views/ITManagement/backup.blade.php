@@ -32,43 +32,40 @@
     ];
 @endphp
 
-<div class="mb-8 flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+<div class="mb-10 flex flex-col xl:flex-row xl:items-end justify-between gap-8 animate-fade-in">
     <div class="flex-1">
-        <h2 class="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-4">
-            <span class="bg-indigo-600 text-white p-3 rounded-2xl shadow-2xl shadow-indigo-600/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-            </span>
-            Backup Records
+        <div class="flex items-center gap-4 mb-2">
+            <span class="px-4 py-1.5 bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-full">IT Management</span>
+            <span class="h-px w-12 bg-slate-200"></span>
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Backup Logs</span>
+        </div>
+        <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            Staff Data <span class="text-indigo-600 underline decoration-indigo-200 underline-offset-8">BackupSheet</span>
         </h2>
-        <p class="text-slate-500 font-bold mt-2 ml-1 text-lg">Manage office-wise staff backup logs with custom sequencing.</p>
     </div>
 
-    <div class="bg-white p-4 rounded-[2rem] shadow-xl border border-slate-100 flex flex-wrap items-center gap-4">
-        <form action="{{ route('it-management.backup.index') }}" method="GET" class="flex flex-wrap items-center gap-3" id="filterForm">
-            <!-- Office Filter -->
-            <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Select Office</label>
-                <select name="office_id" onchange="this.form.submit()" class="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 px-4 py-2.5 min-w-[180px]">
-                    <option value="">All Offices</option>
+    <div class="bg-white p-5 rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 flex flex-wrap items-center gap-5 transition-all hover:shadow-indigo-500/5">
+        <form action="{{ route('it-management.backup.index') }}" method="GET" class="flex flex-wrap items-center gap-4" id="filterForm">
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Office Location</label>
+                <select name="office_id" onchange="this.form.submit()" class="form-select min-w-[200px] !py-3 !rounded-2xl shadow-sm border-slate-100 font-bold">
+                    <option value="">All Locations</option>
                     @foreach($offices as $office)
                         <option value="{{ $office->id }}" {{ $selectedOffice == $office->id ? 'selected' : '' }}>{{ $office->office_name }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <!-- Month/Year -->
             @if(!$specificDate)
-            <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Month / Year</label>
-                <div class="flex gap-1">
-                    <select name="month" class="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 px-3 py-2.5">
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Reporting Month</label>
+                <div class="flex gap-2">
+                    <select name="month" class="form-select !py-3 !rounded-2xl shadow-sm border-slate-100 font-bold min-w-[120px]">
                         @foreach($months as $num => $name)
                             <option value="{{ $num }}" {{ $selectedMonth == $num ? 'selected' : '' }}>{{ $name }}</option>
                         @endforeach
                     </select>
-                    <select name="year" class="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 px-3 py-2.5">
+                    <select name="year" class="form-select !py-3 !rounded-2xl shadow-sm border-slate-100 font-bold min-w-[100px]">
                         @for($i = date('Y') - 1; $i <= date('Y') + 1; $i++)
                             <option value="{{ $i }}" {{ $selectedYear == $i ? 'selected' : '' }}>{{ $i }}</option>
                         @endfor
@@ -77,24 +74,23 @@
             </div>
             @endif
 
-            <!-- Specific Date -->
-            <div class="flex flex-col gap-1">
-                <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Single Date View</label>
-                <div class="flex gap-1">
-                    <input type="date" name="specific_date" value="{{ $specificDate }}" class="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 px-4 py-2.5">
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Specific Date View</label>
+                <div class="flex gap-2">
+                    <input type="date" name="specific_date" value="{{ $specificDate }}" class="form-input !py-3 !rounded-2xl shadow-sm border-slate-100 font-bold">
                     @if($specificDate)
-                        <a href="{{ route('it-management.backup.index') }}" class="p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 transition-colors" title="Clear Date">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <a href="{{ route('it-management.backup.index') }}" class="p-3 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 transition-all active:scale-90" title="Reset Filters">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </a>
                     @endif
                 </div>
             </div>
 
-            <button type="submit" class="self-end p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <button type="submit" class="self-end p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/30 active:scale-95 group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-hover:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
             </button>
         </form>
@@ -102,82 +98,88 @@
 </div>
 
 @if(session('success'))
-<div class="bg-emerald-50 border border-emerald-100 text-emerald-700 px-8 py-5 rounded-3xl relative mb-10 flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-500 shadow-lg shadow-emerald-500/5">
-    <div class="bg-emerald-100 p-3 rounded-2xl text-emerald-600 shadow-inner">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+<div class="bg-indigo-600 text-white px-8 py-4 rounded-[2rem] relative mb-10 flex items-center justify-between animate-fade-in shadow-2xl shadow-indigo-600/20">
+    <div class="flex items-center gap-4">
+        <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <p class="font-bold tracking-tight">{{ session('success') }}</p>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-white/60 hover:text-white transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
         </svg>
-    </div>
-    <div>
-        <span class="font-black text-lg">Success!</span>
-        <p class="text-sm font-medium opacity-80">{{ session('success') }}</p>
-    </div>
+    </button>
 </div>
 @endif
 
 <form action="{{ route('it-management.backup.store') }}" method="POST" id="bulkBackupForm">
     @csrf
-    <div class="bg-white rounded-[3rem] shadow-3xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
-        <div class="bg-[#FFFF00] p-6 text-center border-b-4 border-black/5">
-            <h1 class="text-2xl md:text-4xl font-black text-black uppercase tracking-[0.3em]">
-                {{ $selectedOffice ? \App\Models\Office\OfficeModel::find($selectedOffice)->office_name : 'ALL OFFICES' }} DATA BACKUP RECORD 
-                @if($specificDate) 
-                    ({{ \Carbon\Carbon::parse($specificDate)->format('d M Y') }})
-                @else
-                    ({{ strtoupper($months[(int)$selectedMonth]) }} {{ $selectedYear }})
-                @endif
+    <div class="bg-white rounded-[3.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden relative isolate">
+        <div class="bg-[#FFFF00] p-8 text-center border-b-[6px] border-black/10">
+            <h1 class="text-3xl md:text-5xl font-black text-black uppercase tracking-[0.4em] drop-shadow-sm">
+                {{ $selectedOffice ? \App\Models\Office\OfficeModel::find($selectedOffice)->office_name : 'OFFICE DATA' }} BACKUP RECORD
             </h1>
+            <div class="mt-2 text-sm font-black text-black/40 tracking-[0.2em] uppercase">
+                @if($specificDate) 
+                    FOR DATE: {{ \Carbon\Carbon::parse($specificDate)->format('d F Y') }}
+                @else
+                    MONTHLY REPORT: {{ $months[(int)$selectedMonth] }} {{ $selectedYear }}
+                @endif
+            </div>
         </div>
         
         <!-- Top Scrollbar -->
-        <div class="top-scrollbar overflow-x-auto bg-slate-50 border-b border-slate-100 h-4">
+        <div class="top-scrollbar overflow-x-auto bg-slate-50 border-b border-slate-100 h-2.5">
             <div class="top-scrollbar-content"></div>
         </div>
 
         <div class="overflow-x-auto excel-container" id="mainTableContainer">
-            <table class="w-full text-left border-collapse min-w-[1600px] table-fixed">
+            <table class="w-full text-left border-separate border-spacing-0 min-w-[1800px] table-fixed">
                 <thead>
-                    <tr class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-40">
-                        <th class="w-16 px-2 py-6 text-[10px] font-black text-slate-400 uppercase border-r border-slate-200 sticky left-0 bg-slate-50 z-50 text-center border-b-2 border-slate-200">Seq</th>
-                        <th class="w-16 px-2 py-6 text-[10px] font-black text-slate-400 uppercase border-r border-slate-200 sticky left-16 bg-slate-50 z-50 text-center border-b-2 border-slate-200">SR</th>
-                        <th class="w-64 px-6 py-6 text-[11px] font-black text-slate-700 uppercase border-r border-slate-200 sticky left-32 bg-slate-50 z-50 border-b-2 border-slate-200">Staff Name</th>
+                    <tr class="bg-slate-50/95 backdrop-blur-xl sticky top-0 z-[60]">
+                        <th class="w-[60px] px-2 py-8 text-[11px] font-black text-slate-400 uppercase border-r border-b-2 border-slate-200 sticky left-0 bg-slate-50 z-[70] text-center">SR</th>
+                        <th class="w-[80px] px-2 py-8 text-[11px] font-black text-slate-400 uppercase border-r border-b-2 border-slate-200 sticky left-[60px] bg-slate-50 z-[70] text-center">Seq</th>
+                        <th class="w-[300px] px-8 py-8 text-[12px] font-black text-slate-700 uppercase border-r border-b-2 border-slate-200 sticky left-[140px] bg-slate-50 z-[70]">Staff Member Name</th>
                         
                         @foreach($saturdays as $sat)
-                            <th colspan="4" class="px-2 py-6 text-[11px] font-black text-slate-800 uppercase border-r border-slate-200 text-center bg-indigo-50/50 border-b-2 border-slate-200">
+                            <th colspan="4" class="px-2 py-8 text-[12px] font-black text-slate-800 uppercase border-r border-b-2 border-slate-200 text-center bg-indigo-50/80">
                                 {{ $sat->format('d-m-Y') }} ({{ strtoupper($sat->format('l')) }})
                             </th>
                         @endforeach
                     </tr>
-                    <tr class="bg-slate-50/30 sticky top-[68px] z-40">
-                        <th class="sticky left-0 bg-slate-50 z-50 border-r border-slate-200 border-b-2"></th>
-                        <th class="sticky left-16 bg-slate-50 z-50 border-r border-slate-200 border-b-2"></th>
-                        <th class="sticky left-32 bg-slate-50 z-50 border-r border-slate-200 border-b-2"></th>
+                    <tr class="bg-white/90 backdrop-blur-xl sticky top-[82px] z-[55]">
+                        <th class="sticky left-0 bg-white z-[65] border-r border-b-2 border-slate-100 h-12 shadow-[inset_-1px_0_0_#f1f5f9]"></th>
+                        <th class="sticky left-[60px] bg-white z-[65] border-r border-b-2 border-slate-100 h-12 shadow-[inset_-1px_0_0_#f1f5f9]"></th>
+                        <th class="sticky left-[140px] bg-white z-[65] border-r border-b-2 border-slate-100 h-12 shadow-[inset_-2px_0_10px_rgba(0,0,0,0.02)]"></th>
                         
                         @foreach($saturdays as $sat)
-                            <th class="px-2 py-3 text-[10px] font-black text-slate-400 uppercase border-r border-slate-100 text-center border-b-2 w-28 bg-white/50">Status</th>
-                            <th class="px-2 py-3 text-[10px] font-black text-slate-400 uppercase border-r border-slate-100 text-center border-b-2 w-44 bg-white/50">Location</th>
-                            <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase border-r border-slate-100 text-center border-b-2 min-w-[200px] bg-white/50">Remark</th>
-                            <th class="px-2 py-3 text-[10px] font-black text-slate-400 uppercase border-r border-slate-200 text-center border-b-2 w-28 bg-white/50">Date</th>
+                            <th class="px-2 py-4 text-[10px] font-black text-slate-300 uppercase border-r border-b-2 border-slate-100 text-center w-32 bg-slate-50/20">Status</th>
+                            <th class="px-2 py-4 text-[10px] font-black text-slate-300 uppercase border-r border-b-2 border-slate-100 text-center w-48 bg-slate-50/20">Backup Location</th>
+                            <th class="px-4 py-4 text-[10px] font-black text-slate-300 uppercase border-r border-b-2 border-slate-100 text-center min-w-[250px] bg-slate-50/20">Remarks / Issues</th>
+                            <th class="px-2 py-4 text-[10px] font-black text-slate-300 uppercase border-r border-b-2 border-slate-200 text-center w-32 bg-slate-50/20">Entry Date</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($staffs as $index => $staff)
-                    <tr class="hover:bg-indigo-50/30 transition-colors group">
-                        <!-- Sequence -->
-                        <td class="p-0 border-r border-slate-100 sticky left-0 bg-white group-hover:bg-slate-50 z-30 text-center focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
-                            <input type="number" name="sequences[{{ $staff->id }}]" value="{{ $staff->backup_sequence }}" 
-                                class="w-full h-14 bg-transparent border-none text-[11px] font-black text-slate-800 text-center focus:ring-0"
-                                placeholder="-">
-                        </td>
+                    <tr class="hover:bg-indigo-50/40 transition-colors group">
                         <!-- SR -->
-                        <td class="px-2 py-4 text-xs font-black text-slate-300 border-r border-slate-100 sticky left-16 bg-white group-hover:bg-slate-50 z-30 text-center">
+                        <td class="px-2 py-5 text-xs font-black text-slate-300 border-r border-slate-100 sticky left-0 bg-white group-hover:bg-slate-50/50 z-40 text-center shadow-[inset_-1px_0_0_#f1f5f9]">
                             {{ $index + 1 }}
                         </td>
+                        <!-- Sequence -->
+                        <td class="p-0 border-r border-slate-100 sticky left-[60px] bg-white group-hover:bg-slate-50/50 z-40 text-center focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 shadow-[inset_-1px_0_0_#f1f5f9]">
+                            <input type="number" name="sequences[{{ $staff->id }}]" value="{{ $staff->backup_sequence }}" 
+                                class="w-full h-16 bg-transparent border-none text-xs font-black text-slate-800 text-center focus:ring-0 placeholder:text-slate-200"
+                                placeholder="-">
+                        </td>
                         <!-- Staff Name -->
-                        <td class="px-6 py-4 border-r border-slate-100 sticky left-32 bg-white group-hover:bg-slate-50 z-30">
-                            <div class="text-[13px] font-black text-slate-800 uppercase tracking-tight group-hover:text-indigo-600 transition-colors">{{ $staff->name }}</div>
-                            <div class="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{{ $staff->department->dept_name ?? 'NO DEPT' }}</div>
+                        <td class="px-8 py-5 border-r border-slate-100 sticky left-[140px] bg-white group-hover:bg-slate-50/50 z-40 shadow-[4px_0_15px_rgba(0,0,0,0.02)]">
+                            <div class="text-sm font-black text-slate-800 uppercase tracking-tight group-hover:text-indigo-600 transition-all">{{ $staff->name }}</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{{ $staff->department->dept_name ?? 'NOT ASSIGNED' }}</div>
                         </td>
                         
                         @php
@@ -194,38 +196,38 @@
                             @endphp
                             
                             <!-- Status -->
-                            <td class="p-0 border-r border-slate-100 text-center align-middle focus-within:ring-4 focus-within:ring-inset focus-within:ring-indigo-500/20">
-                                <select name="{{ $prefix }}[status]" class="w-full h-14 bg-transparent border-none text-[11px] font-black text-center focus:ring-0 cursor-pointer text-slate-700">
-                                    <option value="">-</option>
-                                    <option value="YES" {{ ($backup && ($backup->status == 'YES' || $backup->status == 'Completed')) ? 'selected' : '' }}>YES</option>
-                                    <option value="NO" {{ ($backup && ($backup->status == 'NO' || $backup->status == 'Failed')) ? 'selected' : '' }}>NO</option>
-                                    <option value="NA" {{ ($backup && $backup->status == 'NA') ? 'selected' : '' }}>NA</option>
+                            <td class="p-0 border-r border-slate-100 text-center align-middle focus-within:ring-4 focus-within:ring-inset focus-within:ring-indigo-500/10">
+                                <select name="{{ $prefix }}[status]" class="w-full h-16 bg-transparent border-none text-xs font-black text-center focus:ring-0 cursor-pointer text-slate-700">
+                                    <option value="">- SELECT -</option>
+                                    <option value="YES" {{ ($backup && ($backup->status == 'YES' || $backup->status == 'Completed')) ? 'selected' : '' }}>YES ✅</option>
+                                    <option value="NO" {{ ($backup && ($backup->status == 'NO' || $backup->status == 'Failed')) ? 'selected' : '' }}>NO ❌</option>
+                                    <option value="NA" {{ ($backup && $backup->status == 'NA') ? 'selected' : '' }}>N/A ➖</option>
                                 </select>
                             </td>
                             
                             <!-- Location -->
-                            <td class="p-0 border-r border-slate-100 focus-within:ring-4 focus-within:ring-inset focus-within:ring-indigo-500/20">
-                                <select name="{{ $prefix }}[location]" class="w-full h-14 bg-transparent border-none text-[10px] font-black text-slate-600 focus:ring-0 px-4 cursor-pointer">
-                                    <option value="">- SELECT -</option>
+                            <td class="p-0 border-r border-slate-100 focus-within:ring-4 focus-within:ring-inset focus-within:ring-indigo-500/10">
+                                <select name="{{ $prefix }}[location]" class="w-full h-16 bg-transparent border-none text-[11px] font-bold text-slate-600 focus:ring-0 px-4 cursor-pointer">
+                                    <option value="">- SELECT DEVICE -</option>
                                     <option value="DRIVE" {{ ($backup && $backup->location == 'DRIVE') ? 'selected' : '' }}>DRIVE</option>
-                                    <option value="HDD" {{ ($backup && $backup->location == 'HDD') ? 'selected' : '' }}>HDD</option>
-                                    <option value="PENDRIVE" {{ ($backup && $backup->location == 'PENDRIVE') ? 'selected' : '' }}>PENDRIVE</option>
-                                    <option value="PENDRIVE/DRIVE" {{ ($backup && $backup->location == 'PENDRIVE/DRIVE') ? 'selected' : '' }}>PENDRIVE/DRIVE</option>
-                                    <option value="LAPTOP" {{ ($backup && $backup->location == 'LAPTOP') ? 'selected' : '' }}>LAPTOP</option>
-                                    <option value="SOFTWARE" {{ ($backup && $backup->location == 'SOFTWARE') ? 'selected' : '' }}>SOFTWARE</option>
+                                    <option value="HDD" {{ ($backup && $backup->location == 'HDD') ? 'selected' : '' }}>HARD DISK (HDD)</option>
+                                    <option value="PENDRIVE" {{ ($backup && $backup->location == 'PENDRIVE') ? 'selected' : '' }}>USB PENDRIVE</option>
+                                    <option value="PENDRIVE/DRIVE" {{ ($backup && $backup->location == 'PENDRIVE/DRIVE') ? 'selected' : '' }}>PEN + DRIVE</option>
+                                    <option value="LAPTOP" {{ ($backup && $backup->location == 'LAPTOP') ? 'selected' : '' }}>LOCAL LAPTOP</option>
+                                    <option value="SOFTWARE" {{ ($backup && $backup->location == 'SOFTWARE') ? 'selected' : '' }}>ERP SOFTWARE</option>
                                 </select>
                             </td>
                             
                             <!-- Remark -->
-                            <td class="p-0 border-r border-slate-100 focus-within:ring-4 focus-within:ring-inset focus-within:ring-indigo-500/20">
+                            <td class="p-0 border-r border-slate-100 focus-within:ring-4 focus-within:ring-inset focus-within:ring-indigo-500/10">
                                 <input type="text" name="{{ $prefix }}[remark]" value="{{ $backup->remark ?? '' }}" 
-                                    class="w-full h-14 bg-transparent border-none text-[11px] text-slate-500 font-bold focus:ring-0 px-4 placeholder:text-slate-200" 
-                                    placeholder="Click to add remark...">
+                                    class="w-full h-16 bg-transparent border-none text-xs text-slate-500 font-bold focus:ring-0 px-5 placeholder:text-slate-200" 
+                                    placeholder="Enter backup notes...">
                             </td>
 
                             <!-- Date -->
-                            <td class="p-0 border-r border-slate-200 bg-slate-50/20 text-center select-none">
-                                <span class="text-[10px] font-black text-slate-300">{{ $sat->format('d-m-Y') }}</span>
+                            <td class="p-0 border-r border-slate-200 bg-slate-50/10 text-center select-none">
+                                <span class="text-[10px] font-black text-slate-300 tracking-tighter">{{ $sat->format('d-m-Y') }}</span>
                             </td>
                         @endforeach
                     </tr>
@@ -235,82 +237,88 @@
         </div>
     </div>
 
-    <!-- Enhanced Floating Action Button -->
-    <div class="fixed bottom-12 right-12 z-[60]">
-        <button type="submit" class="group flex items-center gap-5 px-12 py-6 bg-slate-900 text-white font-black rounded-[2.5rem] shadow-3xl shadow-slate-900/60 hover:bg-black hover:-translate-y-1 transition-all active:scale-95 border-8 border-white/20 backdrop-blur-xl">
-            <div class="bg-indigo-500 p-2.5 rounded-2xl group-hover:rotate-[360deg] transition-all duration-700 shadow-xl shadow-indigo-500/40">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                </svg>
+    <!-- Professional Floating Save Hub -->
+    <div class="fixed bottom-12 right-12 z-[100] group">
+        <button type="submit" class="flex items-center gap-6 pl-10 pr-12 py-7 bg-slate-900 text-white rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.5)] hover:bg-black hover:-translate-y-2 transition-all duration-500 active:scale-95 border-8 border-white/10 backdrop-blur-3xl isolate">
+            <div class="relative">
+                <div class="absolute inset-0 bg-indigo-500 blur-xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative bg-indigo-500 p-3.5 rounded-2xl shadow-2xl group-hover:scale-110 group-hover:rotate-[15deg] transition-all duration-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                </div>
             </div>
-            <div class="flex flex-col items-start">
-                <span class="uppercase tracking-[0.2em] text-xs opacity-60">Master Save</span>
-                <span class="text-xl">COMMIT CHANGES</span>
+            <div class="flex flex-col items-start text-left">
+                <span class="uppercase tracking-[0.3em] text-[10px] font-black text-indigo-400 mb-1">Backup Records</span>
+                <span class="text-2xl font-black tracking-tight">COMMIT DATA</span>
             </div>
         </button>
     </div>
 </form>
 
 <style>
-    /* Premium Scrollbars */
-    .excel-container, .top-scrollbar {
+    /* Professional Spreadsheet UI Enhancements */
+    .excel-container {
         scrollbar-width: thin;
         scrollbar-color: #cbd5e1 transparent;
     }
     
-    .excel-container::-webkit-scrollbar, .top-scrollbar::-webkit-scrollbar {
-        height: 12px;
-        width: 12px;
-    }
-    .excel-container::-webkit-scrollbar-track, .top-scrollbar::-webkit-scrollbar-track {
-        background: #f8fafc;
-        border-radius: 6px;
-    }
-    .excel-container::-webkit-scrollbar-thumb, .top-scrollbar::-webkit-scrollbar-thumb {
+    .excel-container::-webkit-scrollbar { height: 12px; width: 12px; }
+    .excel-container::-webkit-scrollbar-track { background: #fcfcfc; }
+    .excel-container::-webkit-scrollbar-thumb {
         background: #cbd5e1;
-        border-radius: 6px;
-        border: 3px solid #f8fafc;
+        border-radius: 20px;
+        border: 4px solid #fcfcfc;
     }
-    .excel-container::-webkit-scrollbar-thumb:hover, .top-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
+    .excel-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     
-    /* Sticky Column Alignment Fix */
-    .sticky.left-0 { z-index: 51; }
-    .sticky.left-16 { z-index: 51; left: 64px !important; }
-    .sticky.left-32 { z-index: 51; left: 128px !important; }
+    /* Perfect Sticky Column Alignment */
+    /* SR: 60px wide, left: 0 */
+    /* Seq: 80px wide, left: 60px */
+    /* Name: 300px wide, left: 140px */
+    .sticky.left-0 { left: 0 !important; }
+    .sticky.left-\[60px\] { left: 60px !important; }
+    .sticky.left-\[140px\] { left: 140px !important; }
     
-    /* Cell Highlighting */
-    td:hover { background-color: #f8faff !important; }
-    tr:nth-child(even) { background-color: #fbfcfe; }
+    /* Fix for App Header Conflict (Sticky Top) */
+    /* App nav is 80px high, so our headers stick at 80px */
+    .sticky.top-0 { top: 80px !important; }
+    .sticky.top-\[82px\] { top: 162px !important; } /* 80px nav + 82px first header row */
 
     /* Custom Dropdown Styling */
     select {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 0.75rem center;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 1rem center;
         background-repeat: no-repeat;
         background-size: 1.25em 1.25em;
-        padding-right: 2.5rem;
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
     }
+
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
 </style>
 
 <script>
-    // Sync Top and Bottom Scrollbars
+    // Advanced Scroll Handling
     const mainContainer = document.getElementById('mainTableContainer');
     const topScrollbar = document.querySelector('.top-scrollbar');
     const topScrollbarContent = document.querySelector('.top-scrollbar-content');
     
-    // Set width of fake scrollbar content to match table width
-    function syncScrollWidth() {
+    function syncScroll() {
         const table = mainContainer.querySelector('table');
         topScrollbarContent.style.width = table.scrollWidth + 'px';
+        topScrollbar.scrollLeft = mainContainer.scrollLeft;
     }
     
-    window.addEventListener('load', syncScrollWidth);
-    window.addEventListener('resize', syncScrollWidth);
+    window.addEventListener('load', syncScroll);
+    window.addEventListener('resize', syncScroll);
 
     mainContainer.addEventListener('scroll', () => {
         topScrollbar.scrollLeft = mainContainer.scrollLeft;
@@ -320,31 +328,23 @@
         mainContainer.scrollLeft = topScrollbar.scrollLeft;
     });
 
-    // Arrow Key Navigation
+    // Excel Navigation Logic
     document.addEventListener('keydown', function(e) {
         const active = document.activeElement;
         if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'SELECT')) return;
         
         const cell = active.closest('td');
-        if (!cell) return;
-        
         const row = cell.closest('tr');
         const colIndex = Array.from(row.children).indexOf(cell);
         
         if (e.key === 'ArrowDown') {
             e.preventDefault();
-            const nextRow = row.nextElementSibling;
-            if (nextRow) {
-                const nextInput = nextRow.children[colIndex].querySelector('input, select');
-                if (nextInput) nextInput.focus();
-            }
+            const target = row.nextElementSibling?.children[colIndex].querySelector('input, select');
+            target?.focus();
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
-            const prevRow = row.previousElementSibling;
-            if (prevRow) {
-                const prevInput = prevRow.children[colIndex].querySelector('input, select');
-                if (prevInput) prevInput.focus();
-            }
+            const target = row.previousElementSibling?.children[colIndex].querySelector('input, select');
+            target?.focus();
         }
     });
 </script>
