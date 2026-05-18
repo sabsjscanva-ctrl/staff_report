@@ -28,6 +28,9 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => 'CSRF token mismatch. Please reload the page.'], 419);
+            }
             return redirect()->route('login')->with('error', 'Aapka session expire ho gya hai. Kripya waps login karein.');
         });
     }

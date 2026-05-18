@@ -419,8 +419,7 @@
         setInterval(() => {
             fetch('/keep-alive').then(response => {
                 if (response.status === 401 || response.status === 419) {
-                    // Session expired, optionally redirect or show a message
-                    // window.location.reload();
+                    window.location.reload();
                 }
             }).catch(e => console.log('Session keep-alive failed'));
         }, 5 * 60 * 1000); // Every 5 minutes
