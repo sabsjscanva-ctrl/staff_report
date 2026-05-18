@@ -97,28 +97,7 @@
                 <p style="text-align: center; color: #999; font-style: italic;">No tasks reported for this day.</p>
             @endif
 
-            <div class="grid" style="display: flex; margin-top: 10px;">
-                @if($report->pending_task)
-                <div class="meta-box">
-                    <h4>Yesterday's Pending Work</h4>
-                    <p>{{ $report->pending_task }}</p>
-                </div>
-                @endif
-                
-                @if($report->planned_task)
-                <div class="meta-box">
-                    <h4>Tomorrow's Planned Work</h4>
-                    <p>{{ $report->planned_task }}</p>
-                </div>
-                @endif
 
-                @if($report->comments)
-                <div class="meta-box">
-                    <h4>Comments</h4>
-                    <p>{{ $report->comments }}</p>
-                </div>
-                @endif
-            </div>
             
             <hr style="border: 0.5px dashed #E5E7EB; margin: 20px 0;">
         </div>

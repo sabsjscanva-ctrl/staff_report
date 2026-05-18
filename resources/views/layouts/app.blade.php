@@ -186,10 +186,20 @@
                         </button>
                         <div id="dailyreport-dropdown"
                             class="hidden absolute left-0 mt-2 w-48 bg-white text-gray-700 rounded-xl shadow-lg py-1 z-50 border border-gray-100">
-                            <a href="{{ route('daily-report.create') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                                Submit Report
+                            @if(in_array(Auth::user()->role, ['admin', 'manager']))
+                            <a href="{{ route('daily-report.live-tasks') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-green-50 text-green-600 font-bold transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                Live Tasks
                             </a>
+                            @endif
+
+                            @if(Auth::user()->role === 'staff')
+                            <a href="{{ route('staff.track-task') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-green-50 text-green-600 font-bold transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Track My Task
+                            </a>
+                            @endif
+
                             <a href="{{ route('daily-report.index') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                                 View Reports
@@ -276,7 +286,14 @@
                 @endif
 
                 <div class="text-xs font-semibold text-indigo-300 uppercase tracking-wider px-3 py-2">Daily Work</div>
-                <a href="{{ route('daily-report.create') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Submit Report</a>
+                @if(in_array(Auth::user()->role, ['admin', 'manager']))
+                <a href="{{ route('daily-report.live-tasks') }}" class="block px-3 py-2 rounded-md text-base font-medium text-green-300 hover:bg-indigo-600 transition">Live Tasks</a>
+                @endif
+
+                @if(Auth::user()->role === 'staff')
+                <a href="{{ route('staff.track-task') }}" class="block px-3 py-2 rounded-md text-base font-medium text-green-300 hover:bg-indigo-600 transition">Track My Task</a>
+                @endif
+
                 <a href="{{ route('daily-report.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">View Reports</a>
                 
                 <div class="text-xs font-semibold text-indigo-300 uppercase tracking-wider px-3 py-2 mt-2">Support</div>

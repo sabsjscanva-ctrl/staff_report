@@ -76,42 +76,6 @@
                               focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition" />
                 <p class="text-red-500 text-xs mt-1.5 hidden" id="err-report-date">Report date is required and cannot be in the future.</p>
             </div>
-
-            {{-- Pending Task --}}
-            <div class="sm:col-span-2">
-                <label for="pending_task" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                   Yesterday's Pending Task <span class="text-red-500">*</span>
-                </label>
-                <textarea id="pending_task" rows="3"
-                          placeholder="Tasks pending from yesterday..."
-                          class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50
-                                 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition resize-none">{{ isset($dailyReport) ? $dailyReport->pending_task : '' }}</textarea>
-                <p class="text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-tight" id="err-pending-task">Pending task details are required</p>
-            </div>
-
-            {{-- Planned Task --}}
-            <div class="sm:col-span-2">
-                <label for="planned_task" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                     Tommorow's Planned Task <span class="text-red-500">*</span>
-                </label>
-                <textarea id="planned_task" rows="3"
-                          placeholder="What is planned for tommorow..."
-                          class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50
-                                 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition resize-none">{{ isset($dailyReport) ? $dailyReport->planned_task : '' }}</textarea>
-                <p class="text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-tight" id="err-planned-task">Planned task details are required</p>
-            </div>
-
-            {{-- Comments --}}
-            <div class="sm:col-span-2">
-                <label for="comments" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Comments
-                </label>
-                <textarea id="comments" rows="3"
-                          placeholder="Any other important notes..."
-                          class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50
-                                 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition resize-none">{{ isset($dailyReport) ? $dailyReport->comments : '' }}</textarea>
-            </div>
-
         </div>
     </div>
 
@@ -234,14 +198,43 @@
     }
 
     // ---- Task Row Template ----
-    function parseTimeStr(str) {
-        if (!str) return { hours: '', minutes: '' };
-        const hMatch = str.match(/(\d+)\s*h/);
-        const mMatch = str.match(/(\d+)\s*m/);
-        return {
-            hours:   hMatch ? hMatch[1] : '',
-            minutes: mMatch ? mMatch[1] : ''
-        };
+    function parseDateTimeToTimeStr(dtStr) {
+        if (!dtStr) return '';
+        if (dtStr.match(/^\d{2}:\d{2}$/)) return dtStr;
+        
+        // Check if ISO format
+        const match = dtStr.match(/T(\d{2}):(\d{2})/);
+        if (match) {
+            return `${match[1]}:${match[2]}`;
+        }
+        
+        const date = new Date(dtStr);
+        if (isNaN(date.getTime())) return '';
+        const h = String(date.getHours()).padStart(2, '0');
+        const m = String(date.getMinutes()).padStart(2, '0');
+        return `${h}:${m}`;
+    }
+
+    function calculateTimeDifference(startVal, endVal) {
+        if (!startVal || !endVal) return '';
+        const [sh, sm] = startVal.split(':').map(Number);
+        const [eh, em] = endVal.split(':').map(Number);
+        
+        let startMinutes = sh * 60 + sm;
+        let endMinutes = eh * 60 + em;
+        
+        if (endMinutes < startMinutes) {
+            endMinutes += 24 * 60;
+        }
+        
+        const diff = endMinutes - startMinutes;
+        const h = Math.floor(diff / 60);
+        const m = diff % 60;
+        
+        let str = '';
+        if (h > 0) str += h + 'h ';
+        if (m > 0) str += m + 'm';
+        return str.trim() || '0m';
     }
 
     function taskRowHtml(index, data = {}) {
@@ -249,9 +242,9 @@
         const statusLabels  = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed', paused: 'Paused' };
         
         const isCarry = !!data.is_carry;
-        const time = parseTimeStr(data.time_spend);
-        const hVal = data.hours   !== undefined ? data.hours   : time.hours;
-        const mVal = data.minutes !== undefined ? data.minutes : time.minutes;
+        const startVal = parseDateTimeToTimeStr(data.start_time);
+        const endVal = parseDateTimeToTimeStr(data.end_time);
+        const timeVal = data.time_spend || calculateTimeDifference(startVal, endVal);
 
         const selectedStatus = data.status || 'pending';
         const optionsHtml = statusOptions.map(s =>
@@ -297,50 +290,59 @@
                         Description <span class="text-red-500">*</span>
                     </label>
                     <textarea name="tasks[${index}][description]" rows="2"
-                              ${isCarry ? 'readonly' : ''}
-                              placeholder="Describe what you did..."
-                              class="task-desc-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm ${isCarry ? 'bg-gray-100/50 cursor-not-allowed text-gray-600' : 'bg-white'}
-                                     focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition resize-none">${escHtml(data.description || '')}</textarea>
+                               ${isCarry ? 'readonly' : ''}
+                               placeholder="Describe what you did..."
+                               class="task-desc-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm ${isCarry ? 'bg-gray-100/50 cursor-not-allowed text-gray-600' : 'bg-white'}
+                                      focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition resize-none">${escHtml(data.description || '')}</textarea>
                     <p class="err-task-desc text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-tight">Required</p>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Status <span class="text-red-500">*</span>
-                    </label>
-                    <select name="tasks[${index}][status]"
-                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
-                                   focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition ring-2 ring-indigo-100">
-                        ${optionsHtml}
-                    </select>
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Time Spend <span class="text-red-500">*</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:col-span-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Status <span class="text-red-500">*</span>
                         </label>
-                        ${isCarry && data.previous_time ? `
-                        <div class="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[9px] font-bold text-gray-500 border border-gray-200">
-                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Prev: ${data.previous_time}
-                        </div>` : ''}
+                        <select name="tasks[${index}][status]"
+                                class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
+                                       focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition ring-2 ring-indigo-100">
+                            ${optionsHtml}
+                        </select>
                     </div>
-                    <div class="flex gap-2">
-                        <div class="flex-1 relative">
-                            <input type="number" name="tasks[${index}][hours]"
-                                   value="${hVal}" min="0" placeholder="HH"
-                                   class="task-hours-input w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:outline-none transition" />
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 font-bold uppercase pointer-events-none">hrs</span>
-                        </div>
-                        <div class="flex-1 relative">
-                            <input type="number" name="tasks[${index}][minutes]"
-                                   value="${mVal}" min="0" max="59" placeholder="MM"
-                                   class="task-mins-input w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:outline-none transition" />
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 font-bold uppercase pointer-events-none">min</span>
-                        </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Start Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="time" name="tasks[${index}][start_time]"
+                               value="${startVal}"
+                               class="task-start-time-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:outline-none transition" />
                     </div>
-                    <p class="err-task-time text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-tight">Time is required</p>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                            End Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="time" name="tasks[${index}][end_time]"
+                               value="${endVal}"
+                               class="task-end-time-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:outline-none transition" />
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Time Spent <span class="text-red-500">*</span>
+                            </label>
+                            ${isCarry && data.previous_time ? `
+                            <div class="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[9px] font-bold text-gray-500 border border-gray-200">
+                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Prev: ${data.previous_time}
+                            </div>` : ''}
+                        </div>
+                        <input type="text" name="tasks[${index}][time_spend]" readonly
+                               value="${timeVal}" placeholder="Auto-calculated"
+                               class="task-time-spend-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-100 font-semibold text-gray-700 cursor-not-allowed" />
+                        <p class="err-task-time text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-tight">Time is required</p>
+                    </div>
                 </div>
 
             </div>
@@ -397,21 +399,7 @@
             errDate.classList.add('hidden');
         }
 
-        const pendingInput = document.getElementById('pending_task');
-        const errPending   = document.getElementById('err-pending-task');
-        if (!pendingInput.value.trim()) {
-            errPending.classList.remove('hidden'); ok = false;
-        } else {
-            errPending.classList.add('hidden');
-        }
 
-        const plannedInput = document.getElementById('planned_task');
-        const errPlanned   = document.getElementById('err-planned-task');
-        if (!plannedInput.value.trim()) {
-            errPlanned.classList.remove('hidden'); ok = false;
-        } else {
-            errPlanned.classList.add('hidden');
-        }
 
         const taskRows = document.querySelectorAll('.task-row');
         if (taskRows.length === 0) {
@@ -436,10 +424,10 @@
                 errDesc.classList.add('hidden');
             }
 
-            const hInput = row.querySelector('.task-hours-input');
-            const mInput = row.querySelector('.task-mins-input');
+            const startInput = row.querySelector('.task-start-time-input');
+            const endInput = row.querySelector('.task-end-time-input');
             const errTime = row.querySelector('.err-task-time');
-            if (!hInput.value && !mInput.value) {
+            if (!startInput.value || !endInput.value) {
                 errTime.classList.remove('hidden'); ok = false;
             } else {
                 errTime.classList.add('hidden');
@@ -461,22 +449,15 @@
                     rowData[fieldName] = el.value;
                 }
             });
-            
-            // Format time string from split inputs
-            let timeStr = '';
-            if (rowData.hours)   timeStr += rowData.hours + 'h ';
-            if (rowData.minutes) timeStr += rowData.minutes + 'm';
-            rowData.time_spend = timeStr.trim();
-            
             tasks.push(rowData);
         });
 
         return {
             staff_id:     document.getElementById('staff-id').value,
             report_date:  document.getElementById('report_date').value,
-            pending_task: document.getElementById('pending_task').value,
-            planned_task: document.getElementById('planned_task').value,
-            comments:     document.getElementById('comments').value,
+            pending_task: '',
+            planned_task: '',
+            comments:     '',
             tasks:        tasks,
         };
     }
@@ -543,10 +524,7 @@
         
         taskList.innerHTML = '';
         taskIndex = 0;
-        
-        if (data.pending_task !== undefined) {
-             document.getElementById('pending_task').value = data.pending_task || '';
-        }
+
 
         if (data.tasks && data.tasks.length > 0) {
             taskList.insertAdjacentHTML('beforeend', `
@@ -604,6 +582,19 @@
 
             if (confirm('Date badalne par us date ke hisab se pichle pending tasks load honge aur current entry reset ho jayegi. Kya aap aage badhna chahte hain?')) {
                 fetchCarryTasks(selectedDate);
+            }
+        }
+    });
+
+    // Calculate time difference on start_time or end_time change
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('task-start-time-input') || e.target.classList.contains('task-end-time-input')) {
+            const row = e.target.closest('.task-row');
+            if (row) {
+                const startVal = row.querySelector('.task-start-time-input').value;
+                const endVal = row.querySelector('.task-end-time-input').value;
+                const calculated = calculateTimeDifference(startVal, endVal);
+                row.querySelector('.task-time-spend-input').value = calculated;
             }
         }
     });

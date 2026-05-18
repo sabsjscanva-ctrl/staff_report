@@ -17,6 +17,13 @@ class DailyReportTask extends Model
         'previous_time',
         'status',
         'time_spend',
+        'start_time',
+        'end_time',
+    ];
+
+    protected $casts = [
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
 
     public function dailyReport()

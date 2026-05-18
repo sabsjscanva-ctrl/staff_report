@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Staff\StaffModel;
 use App\Models\DailyReport;
+use App\Models\DailyReportTask;
 use Illuminate\Support\Facades\Auth;
 
 class StaffDashboardController extends Controller
@@ -60,20 +61,54 @@ class StaffDashboardController extends Controller
             }
         }
 
-        return view('Staff.dashboard', compact(
-            'staffDetail', 
-            'totalReports', 
-            'todayReport', 
-            'recentReports', 
-            'profileRequests',
-            'isBirthday',
-            'isAnniversary',
-            'yearsOfService'
-        ));
+        return view('staff.dashboard', [
+            'staffDetail' => $staffDetail,
+            'totalReports' => $totalReports,
+            'todayReport' => $todayReport,
+            'recentReports' => $recentReports,
+            'profileRequests' => $profileRequests,
+            'isBirthday' => $isBirthday,
+            'isAnniversary' => $isAnniversary,
+            'yearsOfService' => $yearsOfService
+        ]);
+    }
+
+    public function trackTask()
+    {
+        \App\Http\Controllers\DailyReportController::autoPauseMidnightTasks(Auth::id());
+        \App\Http\Controllers\DailyReportController::autoCarryForwardPaused(Auth::id());
+
+        $staffDetail = StaffModel::with(['department', 'office'])
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$staffDetail) {
+            Auth::logout();
+            return redirect()->route('login')->with('error', 'Staff details not found.');
+        }
+
+        $todayReport  = DailyReport::where('staff_id', Auth::id())
+            ->whereDate('report_date', today())
+            ->first();
+
+        $userId = Auth::id();
+        $activeTask = DailyReportTask::whereHas('dailyReport', function($q) use ($userId) {
+            $q->where('staff_id', $userId)
+              ->whereDate('report_date', today());
+        })->where('status', 'in_progress')->first();
+
+        $todayTasks = $todayReport ? $todayReport->tasks()->orderBy('created_at', 'asc')->get() : collect();
+
+        return view('staff.track-task', [
+            'staffDetail' => $staffDetail,
+            'todayReport' => $todayReport,
+            'activeTask' => $activeTask,
+            'todayTasks' => $todayTasks
+        ]);
     }
 
     public function guide()
     {
-        return view('Staff.guide');
+        return view('staff.guide');
     }
 }

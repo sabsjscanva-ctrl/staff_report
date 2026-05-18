@@ -36,6 +36,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 // Staff routes
 Route::middleware(['auth', 'role:staff'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/track-task', [StaffDashboardController::class, 'trackTask'])->name('track-task');
     Route::get('/guide', [StaffDashboardController::class, 'guide'])->name('guide');
     Route::post('/profile-update-request', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'store'])->name('profile.update.request');
 });
@@ -100,8 +101,15 @@ Route::middleware(['auth', 'role:IT DEPARTMENT'])->prefix('stock-management')->n
 // Daily Report (All authenticated users)
 Route::middleware('auth')->prefix('daily-report')->name('daily-report.')->group(function () {
     Route::get('/',          [DailyReportController::class, 'index'])->name('index');
+    Route::get('/live-tasks', [DailyReportController::class, 'liveTasks'])->name('live-tasks');
+    Route::post('/task/start', [DailyReportController::class, 'startTask'])->name('task.start');
+    Route::post('/task/{task}/end', [DailyReportController::class, 'endTask'])->name('task.end');
+    Route::post('/task/{task}/pause', [DailyReportController::class, 'pauseTask'])->name('task.pause');
+    Route::post('/task/{task}/resume', [DailyReportController::class, 'resumeTask'])->name('task.resume');
+    Route::get('/task/{task}/history', [DailyReportController::class, 'getTaskHistory'])->name('task.history');
+    
     Route::get('/export',    [DailyReportController::class, 'export'])->name('export');
-    Route::get('/create',   [DailyReportController::class, 'create'])->name('create');
+
     Route::post('/',        [DailyReportController::class, 'store'])->name('store');
     Route::get('/{dailyReport}',        [DailyReportController::class, 'show'])->name('show');
     Route::get('/{dailyReport}/edit',   [DailyReportController::class, 'edit'])->name('edit');

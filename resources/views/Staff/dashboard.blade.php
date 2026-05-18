@@ -12,13 +12,7 @@
             <span class="text-gray-400 ml-1">{{ now()->format('l, d M Y') }}</span>
         </p>
     </div>
-    <a href="{{ route('daily-report.create') }}"
-       class="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-        </svg>
-        Submit Today's Report
-    </a>
+
     <div class="flex items-center gap-2">
         <a href="{{ route('staff.guide') }}"
            class="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-xl transition hover:bg-indigo-100 flex items-center gap-2 border border-indigo-100 shadow-sm">
@@ -75,31 +69,6 @@
 </div>
 @endif
 
-@if($todayReport)
-<div class="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-3.5 flex items-center gap-3">
-    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-    </div>
-    <div class="flex-1">
-        <p class="text-sm text-green-800 font-medium">Today's report has been submitted!</p>
-        <p class="text-xs text-green-600 mt-0.5">{{ $todayReport->tasks->count() }} task(s) added.</p>
-    </div>
-    </div>
-</div>
-@else
-<div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-3.5 flex items-center gap-3">
-    <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-    </div>
-    <p class="text-sm text-yellow-800 font-medium flex-1">Today's report has not been submitted yet. Please submit it soon!</p>
-    <a href="{{ route('daily-report.create') }}"
-       class="text-xs font-medium text-yellow-700 hover:text-yellow-900 underline transition">Submit Now</a>
-</div>
-@endif
 
 @php
     $weekCount = \App\Models\DailyReport::where('staff_id', Auth::id())
@@ -556,7 +525,7 @@
         });
     });
 
-    document.getElementById('change-password-form').addEventListener('submit', function(e) {
+    document.getElementById('change-password-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         const alertBox = document.getElementById('password-alert');
@@ -590,5 +559,6 @@
             alertBox.innerText = 'Something went wrong. Please check your inputs.';
         });
     });
+
 </script>
 @endpush

@@ -52,12 +52,6 @@
     </div>
     
     <div class="flex items-center gap-3">
-        <a href="{{ route('daily-report.create') }}" class="btn-primary">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-            </svg>
-            Submit New Report
-        </a>
     </div>
 </div>
 
@@ -114,15 +108,32 @@
 
 {{-- Filters Bar --}}
 <div class="card-premium mb-8 overflow-visible">
-    <form action="{{ route('daily-report.export') }}" method="GET" id="export-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <form action="{{ route('daily-report.export') }}" method="GET" id="export-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         @if(Auth::user()->role !== 'staff')
+        <div class="space-y-2">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Office / Branch</label>
+            <div class="relative">
+                <select id="office-filter" onchange="filterStaffByOffice()" class="form-input-modern appearance-none pr-10">
+                    <option value="">All Offices</option>
+                    @foreach($offices as $o)
+                        <option value="{{ $o->id }}">{{ $o->name }}</option>
+                    @endforeach
+                </select>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
         <div class="space-y-2">
             <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Staff Member</label>
             <div class="relative">
                 <select name="staff_id" id="staff-filter" onchange="applyFilters()" class="form-input-modern appearance-none pr-10">
                     <option value="">All Personnel</option>
                     @foreach($allStaff as $s)
-                        <option value="{{ $s->id }}" data-name="{{ strtolower($s->name) }}">{{ $s->name }}</option>
+                        <option value="{{ $s->id }}" data-office="{{ $s->staff->office_id ?? '' }}" data-name="{{ strtolower($s->name) }}">{{ $s->name }}</option>
                     @endforeach
                 </select>
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -186,166 +197,194 @@
     </form>
 </div>
 
-{{-- Table Section --}}
-<div class="card-premium !p-0 overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full text-sm text-left" id="reports-table">
-            <thead>
-                <tr class="bg-slate-50 border-b border-slate-100">
-                    <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest w-12">#</th>
-                    @if(Auth::user()->role !== 'staff')
-                        <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Personnel</th>
-                        <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">User Role</th>
-                    @endif
-                    <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Report Date</th>
-                    <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Tasks Summary</th>
-                    <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Hours Logged</th>
-                    <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Pending Work</th>
-                    <th class="px-6 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="reports-tbody" class="divide-y divide-slate-100">
-                @forelse($reports as $report)
-                @php
-                    $taskCount  = $report->tasks->count();
-                    $doneCount  = $report->tasks->where('status','completed')->count();
-                    $pct        = $taskCount > 0 ? round(($doneCount / $taskCount) * 100) : 0;
-                @endphp
-                <tr class="hover:bg-gray-50/80 transition-colors report-row group"
-                    data-staff-id="{{ $report->staff_id }}"
-                    data-name="{{ strtolower($report->staff->name ?? '') }}"
-                    data-date="{{ $report->report_date->format('Y-m-d') }}">
+{{-- Grouped Datewise Section --}}
+<div class="space-y-6" id="reports-container">
+    @php
+        $groupedReports = $reports->groupBy(fn($r) => $r->report_date->format('Y-m-d'));
+        $totalTasksCount = 0;
+        foreach($reports as $r) {
+            $totalTasksCount += $r->tasks->count();
+        }
+    @endphp
 
-                    <td class="px-5 py-4">
-                        <span class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
-                            #{{ str_pad($report->id, 3, '0', STR_PAD_LEFT) }}
+    @forelse($groupedReports as $dateStr => $dayReports)
+        @php
+            $carbonDate = \Carbon\Carbon::parse($dateStr);
+            // Calculate total tasks and total time spent on this day
+            $allTasks = collect();
+            foreach($dayReports as $r) {
+                $allTasks = $allTasks->concat($r->tasks);
+            }
+            $totalTasksForDay = $allTasks->count();
+            
+            // Sum time
+            $dayMinutes = 0;
+            foreach($allTasks as $task) {
+                $ts = strtolower($task->time_spend);
+                if (preg_match('/(\d+)\s*h/', $ts, $m)) $dayMinutes += $m[1] * 60;
+                if (preg_match('/(\d+)\s*m/', $ts, $m)) $dayMinutes += $m[1];
+                if (preg_match('/(\d+):(\d+)/', $ts, $m)) $dayMinutes += $m[1] * 60 + $m[2];
+            }
+            $dh = floor($dayMinutes / 60);
+            $dm = $dayMinutes % 60;
+            $dayTimeStr = ($dh > 0 ? $dh.'h ' : '') . ($dm > 0 ? $dm.'m' : '');
+        @endphp
+        
+        <div class="date-group card-premium !p-0 overflow-hidden" data-date="{{ $dateStr }}">
+            <!-- Date Group Header Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold tracking-tight">{{ $carbonDate->format('l, d M, Y') }}</h3>
+                        <p class="text-[11px] text-slate-300/90 font-medium">Work Logs & Tasks</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4 text-xs font-semibold">
+                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-400/20 px-3 py-1 rounded-lg group-task-count">
+                        {{ $totalTasksForDay }} {{ Str::plural('task', $totalTasksForDay) }}
+                    </span>
+                    @if($dayTimeStr)
+                        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-400/20 px-3 py-1 rounded-lg flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            {{ $dayTimeStr }}
                         </span>
-                    </td>
-
-                    @if(Auth::user()->role !== 'staff')
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-2xl gradient-bg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-100 flex-shrink-0">
-                                {{ strtoupper(substr($report->staff->name ?? 'U', 0, 1)) }}
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-slate-800 leading-tight">{{ $report->staff->name ?? '—' }}</p>
-                                <p class="text-[11px] text-slate-400 mt-0.5 tracking-wide">{{ $report->staff->designation ?? '' }}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4">
-                        @php $role = $report->staff->role ?? 'staff'; @endphp
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                            {{ $role === 'admin' ? 'bg-purple-50 text-purple-600' :
-                               ($role === 'manager' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-600') }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $role === 'admin' ? 'bg-purple-500' : ($role === 'manager' ? 'bg-indigo-500' : 'bg-slate-400') }}"></span>
-                            {{ $role }}
-                        </span>
-                    </td>
                     @endif
-
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-1.5 text-slate-700 font-medium">
-                            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            {{ $report->report_date->format('d M, Y') }}
-                        </div>
-                    </td>
-
-                    <td class="px-6 py-4">
-                        <div class="flex flex-col gap-2 min-w-[120px]">
-                            <div class="flex items-center justify-between text-[11px] font-bold">
-                                <span class="text-slate-400 uppercase tracking-widest">{{ $doneCount }}/{{ $taskCount }} Tasks</span>
-                                <span class="{{ $pct === 100 ? 'text-emerald-500' : 'text-indigo-500' }}">{{ $pct }}%</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full {{ $pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500' }} rounded-full transition-all duration-500" style="width: {{ $pct }}%"></div>
-                            </div>
-                        </div>
-                    </td>
-
-                    <td class="px-6 py-4">
-                        @php
-                            $totalMinutes = 0;
-                            foreach($report->tasks as $task) {
-                                $ts = strtolower($task->time_spend);
-                                if (preg_match('/(\d+)\s*h/', $ts, $m)) $totalMinutes += $m[1] * 60;
-                                if (preg_match('/(\d+)\s*m/', $ts, $m)) $totalMinutes += $m[1];
-                                if (preg_match('/(\d+):(\d+)/', $ts, $m)) $totalMinutes += $m[1] * 60 + $m[2];
-                            }
-                            $h = floor($totalMinutes / 60);
-                            $m = $totalMinutes % 60;
-                            $timeStr = ($h > 0 ? $h.'h ' : '') . ($m > 0 ? $m.'m' : '');
-                        @endphp
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-50 text-slate-700 font-bold text-xs">
-                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            {{ $timeStr ?: '—' }}
-                        </div>
-                    </td>
-
-                    <td class="px-5 py-4 max-w-[220px]">
-                        @if($report->pending_task)
-                            <p class="text-xs text-gray-600 leading-relaxed line-clamp-2">{{ $report->pending_task }}</p>
-                        @else
-                            <span class="text-xs text-gray-300 italic">No pending work</span>
-                        @endif
-                    </td>
-
-                    <td class="px-5 py-4">
-                        <div class="flex items-center justify-end gap-1.5">
-                            <button data-id="{{ $report->id }}" onclick="viewDetail(this.dataset.id)"
-                                    title="View Details"
-                                    class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="{{ Auth::user()->role === 'staff' ? '5' : '7' }}"
-                        class="px-5 py-20 text-center">
-                        <div class="flex flex-col items-center gap-3">
-                            <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-700">No reports found</p>
-                                <p class="text-xs text-gray-400 mt-1">No daily reports have been submitted yet.</p>
-                            </div>
-                            <a href="{{ route('daily-report.create') }}"
-                               class="inline-flex items-center gap-1.5 mt-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                                </svg>
-                                Submit First Report
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    @if($reports->count() > 0)
-    <div class="px-5 py-3 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between">
-        <p class="text-xs text-gray-400">
-            Total <span class="font-semibold text-gray-600" id="visible-count">{{ $reports->count() }}</span> reports
-        </p>
-        <p class="text-xs text-gray-400">{{ now()->format('d M Y, H:i') }} data</p>
-    </div>
-    @endif
+                </div>
+            </div>
+            
+            <!-- Tasks List/Table inside Date Group -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                            @if(Auth::user()->role !== 'staff')
+                                <th class="px-6 py-4 w-[20%]">Personnel</th>
+                            @endif
+                            <th class="px-6 py-4 w-[35%]">Task Details</th>
+                            <th class="px-6 py-4 w-[20%] text-center">Timings & Duration</th>
+                            <th class="px-6 py-4 w-[15%] text-center">Status</th>
+                            <th class="px-6 py-4 w-[10%] text-right text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($dayReports as $report)
+                            @foreach($report->tasks as $task)
+                                <tr class="hover:bg-slate-50/50 transition-colors task-row" data-staff-id="{{ $report->staff_id }}">
+                                    @if(Auth::user()->role !== 'staff')
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">
+                                                    {{ strtoupper(substr($report->staff->name ?? 'U', 0, 1)) }}
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <p class="text-xs font-bold text-slate-700 leading-tight truncate">{{ $report->staff->name ?? '—' }}</p>
+                                                    <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter bg-indigo-50 px-1 py-0.5 rounded-md mt-0.5 inline-block">{{ $report->staff->role ?? 'staff' }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    @endif
+                                    
+                                    <td class="px-6 py-4">
+                                        <div class="min-w-0">
+                                            <p class="font-semibold text-slate-800 text-sm leading-tight flex items-center gap-2">
+                                                {{ $task->task_title }}
+                                                @if($task->is_carry)
+                                                    <span class="text-[8px] font-bold text-amber-600 uppercase tracking-tighter bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100/50">Continued</span>
+                                                @endif
+                                            </p>
+                                            @if($task->description)
+                                                <p class="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2" title="{{ $task->description }}">{{ $task->description }}</p>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex flex-col items-center gap-1.5 justify-center">
+                                            @if($task->start_time && $task->end_time)
+                                                <div class="text-[10px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/50 whitespace-nowrap">
+                                                    {{ \Carbon\Carbon::parse($task->start_time)->format('h:i A') }} — {{ \Carbon\Carbon::parse($task->end_time)->format('h:i A') }}
+                                                </div>
+                                            @elseif($task->start_time)
+                                                <div class="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded border border-green-100/50 animate-pulse whitespace-nowrap">
+                                                    Started: {{ \Carbon\Carbon::parse($task->start_time)->format('h:i A') }}
+                                                </div>
+                                            @endif
+                                            
+                                            @if($task->time_spend)
+                                                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold border border-indigo-100">
+                                                    {{ $task->time_spend }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 text-center">
+                                        @php
+                                            $badgeClasses = [
+                                                'completed'  => 'bg-green-50 text-green-700 border border-green-100',
+                                                'in_progress'=> 'bg-blue-50 text-blue-700 border border-blue-100',
+                                                'pending'    => 'bg-amber-50 text-amber-700 border border-amber-100',
+                                                'paused'     => 'bg-gray-100 text-gray-600 border border-gray-200',
+                                            ][$task->status] ?? 'bg-slate-50 text-slate-600';
+                                            
+                                            $statusLabel = [
+                                                'completed'  => 'Completed',
+                                                'in_progress'=> 'In Progress',
+                                                'pending'    => 'Pending',
+                                                'paused'     => 'Paused',
+                                            ][$task->status] ?? $task->status;
+                                        @endphp
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $badgeClasses }}">
+                                            {{ $statusLabel }}
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button data-id="{{ $report->id }}" onclick="viewDetail(this.dataset.id)"
+                                                    title="View Full Report Details"
+                                                    class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @empty
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center">
+            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-700">No reports found</h3>
+            <p class="text-sm text-gray-500 mt-1">No daily reports have been submitted yet.</p>
+        </div>
+    @endforelse
 </div>
+
+@if($reports->count() > 0)
+<div class="card-premium mt-6 px-5 py-4 bg-slate-50 flex items-center justify-between border border-slate-100">
+    <p class="text-xs text-gray-400">
+        Total <span class="font-semibold text-gray-600" id="visible-count">{{ $totalTasksCount }}</span> tasks across {{ $reports->count() }} reports
+    </p>
+    <p class="text-xs text-gray-400">{{ now()->format('d M Y, H:i') }} data</p>
+</div>
+@endif
 
 {{-- No results message --}}
 <div id="no-results" class="hidden mt-3">
@@ -427,20 +466,6 @@
                         <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Report Date</p>
                         <p class="font-semibold text-gray-800 text-sm">${d.report_date || '—'}</p>
                     </div>
-                </div>
-                <div class="space-y-3 mb-5">
-                    <div class="rounded-xl border border-gray-100 p-4">
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Pending Task</p>
-                        <p class="text-sm text-gray-700 leading-relaxed">${esc(d.pending_task || '—')}</p>
-                    </div>
-                    <div class="rounded-xl border border-gray-100 p-4">
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Planned Task</p>
-                        <p class="text-sm text-gray-700 leading-relaxed">${esc(d.planned_task || '—')}</p>
-                    </div>
-                    <div class="rounded-xl border border-gray-100 p-4">
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-2">Comments</p>
-                        <p class="text-sm text-gray-700 leading-relaxed">${esc(d.comments || '—')}</p>
-                    </div>
                 </div>`;
 
             const totalMinutes = (d.tasks || []).reduce((acc, t) => {
@@ -456,10 +481,38 @@
             const tm = totalMinutes % 60;
             const totalStr = (th > 0 ? th + 'h ' : '') + (tm > 0 ? tm + 'm' : '') || '—';
 
+            const formatTime = (dtStr) => {
+                if (!dtStr) return '';
+                // Check if HH:MM
+                if (dtStr.match(/^\d{2}:\d{2}$/)) {
+                    const [h, m] = dtStr.split(':').map(Number);
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+                }
+                const match = dtStr.match(/T(\d{2}):(\d{2})/);
+                let h, m;
+                if (match) {
+                    h = parseInt(match[1]);
+                    m = parseInt(match[2]);
+                } else {
+                    const date = new Date(dtStr);
+                    if (isNaN(date.getTime())) return '';
+                    h = date.getHours();
+                    m = date.getMinutes();
+                }
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+            };
+
             const carryTasks = (d.tasks || []).filter(t => t.is_carry);
             const newTasks   = (d.tasks || []).filter(t => !t.is_carry);
 
-            const renderTask = (t, i, typeLabel) => `
+            const renderTask = (t, i, typeLabel) => {
+                const startTimeStr = t.start_time ? formatTime(t.start_time) : '';
+                const endTimeStr = t.end_time ? formatTime(t.end_time) : '';
+                const durationStr = startTimeStr && endTimeStr ? `${startTimeStr} — ${endTimeStr}` : '';
+
+                return `
                 <div class="flex items-start gap-3 border ${t.is_carry ? 'border-amber-100 bg-amber-50/30' : 'border-gray-100 bg-gray-50'} rounded-xl p-3.5 hover:bg-white transition group">
                     <div class="w-6 h-6 rounded-full ${t.is_carry ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'} flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">${i+1}</div>
                     <div class="flex-1 min-w-0">
@@ -472,7 +525,13 @@
                         </div>
                         ${t.description ? `<p class="text-xs text-gray-500 mt-1.5 leading-relaxed">${esc(t.description)}</p>` : ''}
                         
-                        <div class="flex items-center gap-3 mt-2">
+                        <div class="flex items-center gap-3 mt-2 flex-wrap">
+                            ${durationStr ? `
+                                <div class="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-slate-600 border border-slate-200">
+                                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-[10px] font-semibold">${durationStr}</span>
+                                </div>
+                            ` : ''}
                             ${t.is_carry && t.previous_time ? `
                                 <div class="flex items-center gap-1">
                                     <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -488,6 +547,7 @@
                         </div>
                     </div>
                 </div>`;
+            };
 
             let tasksHtml = `
                 <div class="flex items-center justify-between mb-4 bg-slate-900 rounded-xl px-4 py-3 text-white">
@@ -555,32 +615,56 @@
         const staffId = document.getElementById('staff-filter')?.value;
         const start   = document.getElementById('start-date').value;
         const end     = document.getElementById('end-date').value;
-        const rows    = document.querySelectorAll('.report-row');
-        let visible   = 0;
+        const dateGroups = document.querySelectorAll('.date-group');
+        let totalVisibleTasks = 0;
 
-        rows.forEach(row => {
-            const sidMatch = !staffId || row.dataset.staffId === staffId;
-            const rDate    = row.dataset.date;
+        dateGroups.forEach(group => {
+            const gDate = group.dataset.date;
             
+            // Check date match
             let dateMatch = true;
-            if (start && rDate < start) dateMatch = false;
-            if (end && rDate > end) dateMatch = false;
+            if (start && gDate < start) dateMatch = false;
+            if (end && gDate > end) dateMatch = false;
 
-            if (sidMatch && dateMatch) { 
-                row.style.display = ''; 
-                visible++; 
-            } else { 
-                row.style.display = 'none'; 
+            if (!dateMatch) {
+                group.style.display = 'none';
+                return;
+            }
+
+            // Filter tasks inside this date group
+            const tasks = group.querySelectorAll('.task-row');
+            let visibleTasksInGroup = 0;
+
+            tasks.forEach(task => {
+                const sidMatch = !staffId || task.dataset.staffId === staffId;
+                if (sidMatch) {
+                    task.style.display = '';
+                    visibleTasksInGroup++;
+                } else {
+                    task.style.display = 'none';
+                }
+            });
+
+            if (visibleTasksInGroup > 0) {
+                group.style.display = '';
+                // Update badge count for visible tasks in this group
+                const groupCountBadge = group.querySelector('.group-task-count');
+                if (groupCountBadge) {
+                    groupCountBadge.textContent = visibleTasksInGroup + (visibleTasksInGroup === 1 ? ' task' : ' tasks');
+                }
+                totalVisibleTasks += visibleTasksInGroup;
+            } else {
+                group.style.display = 'none';
             }
         });
 
         const noRes = document.getElementById('no-results');
         const cnt   = document.getElementById('visible-count');
-        if (noRes) noRes.classList.toggle('hidden', visible > 0);
-        if (cnt) cnt.textContent = visible;
+        if (noRes) noRes.classList.toggle('hidden', totalVisibleTasks > 0);
+        if (cnt) cnt.textContent = totalVisibleTasks;
         
         const rc = document.getElementById('result-count');
-        if (rc) rc.textContent = visible + ' report' + (visible !== 1 ? 's' : '');
+        if (rc) rc.textContent = totalVisibleTasks + ' task' + (totalVisibleTasks !== 1 ? 's' : '');
     }
 
     function setQuickRange(type) {
@@ -604,10 +688,47 @@
 
     function clearFilters() {
         const sf = document.getElementById('staff-filter');
+        const of = document.getElementById('office-filter');
+        if (of) {
+            of.value = '';
+            filterStaffByOffice(); // Reset staff options
+        }
         if (sf) sf.value = '';
         document.getElementById('start-date').value  = '';
         document.getElementById('end-date').value  = '';
         applyFilters();
     }
+
+    function filterStaffByOffice() {
+        const officeId = document.getElementById('office-filter').value;
+        const staffSelect = document.getElementById('staff-filter');
+        if (!staffSelect) return;
+
+        const options = staffSelect.querySelectorAll('option:not([value=""])');
+        
+        let hasVisibleStaff = false;
+        options.forEach(opt => {
+            const optOffice = opt.getAttribute('data-office');
+            if (officeId === '' || optOffice === officeId) {
+                opt.style.display = '';
+                hasVisibleStaff = true;
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+
+        // Reset the staff dropdown if the selected user gets hidden
+        const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+        if (selectedOption.value !== "" && selectedOption.style.display === 'none') {
+            staffSelect.value = "";
+        }
+        
+        applyFilters();
+    }
+
+    // Run on load in case the browser pre-fills the office dropdown
+    document.addEventListener('DOMContentLoaded', () => {
+        if(document.getElementById('office-filter')) filterStaffByOffice();
+    });
 </script>
 @endpush

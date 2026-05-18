@@ -32,10 +32,7 @@ class DailyReportExport implements FromCollection, WithHeadings, WithMapping, Wi
             'Task Description',
             'Status',
             'Time Spent',
-            'Total Day Time',
-            'Pending Work (Next Day)',
-            'Planned Work (Next Day)',
-            'Comments'
+            'Total Day Time'
         ];
     }
 
@@ -64,10 +61,7 @@ class DailyReportExport implements FromCollection, WithHeadings, WithMapping, Wi
                 '—',
                 '—',
                 '—',
-                $totalDayStr,
-                $report->pending_task,
-                $report->planned_task,
-                $report->comments
+                $totalDayStr
             ]];
         }
 
@@ -81,9 +75,6 @@ class DailyReportExport implements FromCollection, WithHeadings, WithMapping, Wi
                 ucfirst($task->status),
                 $task->time_spend,
                 $first ? $totalDayStr : '',
-                $first ? $report->pending_task : '',
-                $first ? $report->planned_task : '',
-                $first ? $report->comments : '',
             ];
             $first = false;
         }

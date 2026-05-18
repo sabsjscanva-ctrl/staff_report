@@ -20,6 +20,8 @@ class DailyReportController extends Controller
 
     public function index()
     {
+        self::autoPauseMidnightTasks(Auth::id());
+
         $query = DailyReport::with(['staff', 'tasks'])
             ->orderByDesc('report_date')
             ->orderByDesc('created_at');
@@ -48,15 +50,19 @@ class DailyReportController extends Controller
 
         // Fetch staff for dropdown (Admin/Manager only)
         $allStaff = [];
+        $offices = [];
         if (Auth::user()->role !== 'staff') {
-            $allStaff = User::whereIn('role', ['staff', 'manager', 'admin'])
+            $allStaff = User::with('staff.office')
+                ->whereIn('role', ['staff', 'manager', 'admin'])
                 ->orderBy('name')
                 ->get();
+            $offices = \App\Models\Office\OfficeModel::orderBy('name')->get();
         }
 
         return view('DailyReport.DailyReportView', compact(
             'reports', 
-            'allStaff', 
+            'allStaff',
+            'offices',
             'totalReports', 
             'todayReports', 
             'totalTasks', 
@@ -116,14 +122,16 @@ class DailyReportController extends Controller
     {
         $request->validate([
             'report_date'  => 'required|date|before_or_equal:today',
-            'pending_task' => 'required|string',
-            'planned_task' => 'required|string',
+            'pending_task' => 'nullable|string',
+            'planned_task' => 'nullable|string',
             'comments'     => 'nullable|string',
             'tasks'                => 'nullable|array',
             'tasks.*.task_title'  => 'required_with:tasks.*|string|max:255',
             'tasks.*.description' => 'required_with:tasks.*|string',
             'tasks.*.status'      => 'required_with:tasks.*|in:completed,in_progress,pending,paused',
-            'tasks.*.time_spend'  => 'required_with:tasks.*|string|max:100',
+            'tasks.*.time_spend'  => 'nullable|string|max:100',
+            'tasks.*.start_time'  => 'nullable|string',
+            'tasks.*.end_time'    => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -139,13 +147,40 @@ class DailyReportController extends Controller
             if ($request->has('tasks') && is_array($request->tasks)) {
                 foreach ($request->tasks as $task) {
                     if (!empty($task['task_title'])) {
+                        $startTime = null;
+                        if (!empty($task['start_time'])) {
+                            try {
+                                $startTime = \Carbon\Carbon::parse($request->report_date . ' ' . $task['start_time']);
+                            } catch (\Exception $e) {}
+                        }
+                        $endTime = null;
+                        if (!empty($task['end_time'])) {
+                            try {
+                                $endTime = \Carbon\Carbon::parse($request->report_date . ' ' . $task['end_time']);
+                            } catch (\Exception $e) {}
+                        }
+
+                        $timeSpend = $task['time_spend'] ?? null;
+                        if ($startTime && $endTime) {
+                            $diffInMinutes = $endTime->diffInMinutes($startTime);
+                            $hours = floor($diffInMinutes / 60);
+                            $minutes = $diffInMinutes % 60;
+                            $calculatedTime = '';
+                            if ($hours > 0) $calculatedTime .= $hours . 'h ';
+                            if ($minutes > 0) $calculatedTime .= $minutes . 'm';
+                            if ($calculatedTime === '') $calculatedTime = '1m';
+                            $timeSpend = trim($calculatedTime);
+                        }
+
                         $report->tasks()->create([
                             'task_title'   => $task['task_title'],
                             'description'  => $task['description'] ?? null,
                             'is_carry'     => isset($task['is_carry']) && ($task['is_carry'] === 'true' || $task['is_carry'] === true),
                             'previous_time' => $task['previous_time'] ?? null,
                             'status'       => $task['status'] ?? 'pending',
-                            'time_spend'   => $task['time_spend'] ?? null,
+                            'time_spend'   => $timeSpend,
+                            'start_time'   => $startTime,
+                            'end_time'     => $endTime,
                         ]);
                     }
                 }
@@ -184,6 +219,8 @@ class DailyReportController extends Controller
                 'previous_time'  => $t->previous_time,
                 'status'        => $t->status,
                 'time_spend'    => $t->time_spend,
+                'start_time'    => $t->start_time,
+                'end_time'      => $t->end_time,
             ])->values()->toArray(),
         ]);
     }
@@ -205,14 +242,16 @@ class DailyReportController extends Controller
 
         $request->validate([
             'report_date'  => 'required|date|before_or_equal:today',
-            'pending_task' => 'required|string',
-            'planned_task' => 'required|string',
+            'pending_task' => 'nullable|string',
+            'planned_task' => 'nullable|string',
             'comments'     => 'nullable|string',
             'tasks'                => 'nullable|array',
             'tasks.*.task_title'  => 'required_with:tasks.*|string|max:255',
             'tasks.*.description' => 'required_with:tasks.*|string',
             'tasks.*.status'      => 'required_with:tasks.*|in:completed,in_progress,pending,paused',
-            'tasks.*.time_spend'  => 'required_with:tasks.*|string|max:100',
+            'tasks.*.time_spend'  => 'nullable|string|max:100',
+            'tasks.*.start_time'  => 'nullable|string',
+            'tasks.*.end_time'    => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -230,13 +269,40 @@ class DailyReportController extends Controller
             if ($request->has('tasks') && is_array($request->tasks)) {
                 foreach ($request->tasks as $task) {
                     if (!empty($task['task_title'])) {
+                        $startTime = null;
+                        if (!empty($task['start_time'])) {
+                            try {
+                                $startTime = \Carbon\Carbon::parse($request->report_date . ' ' . $task['start_time']);
+                            } catch (\Exception $e) {}
+                        }
+                        $endTime = null;
+                        if (!empty($task['end_time'])) {
+                            try {
+                                $endTime = \Carbon\Carbon::parse($request->report_date . ' ' . $task['end_time']);
+                            } catch (\Exception $e) {}
+                        }
+
+                        $timeSpend = $task['time_spend'] ?? null;
+                        if ($startTime && $endTime) {
+                            $diffInMinutes = $endTime->diffInMinutes($startTime);
+                            $hours = floor($diffInMinutes / 60);
+                            $minutes = $diffInMinutes % 60;
+                            $calculatedTime = '';
+                            if ($hours > 0) $calculatedTime .= $hours . 'h ';
+                            if ($minutes > 0) $calculatedTime .= $minutes . 'm';
+                            if ($calculatedTime === '') $calculatedTime = '1m';
+                            $timeSpend = trim($calculatedTime);
+                        }
+
                         $dailyReport->tasks()->create([
                             'task_title'    => $task['task_title'],
                             'description'   => $task['description'] ?? null,
                             'is_carry'      => isset($task['is_carry']) && ($task['is_carry'] === 'true' || $task['is_carry'] === true),
                             'previous_time'  => $task['previous_time'] ?? null,
                             'status'        => $task['status'] ?? 'pending',
-                            'time_spend'    => $task['time_spend'] ?? null,
+                            'time_spend'    => $timeSpend,
+                            'start_time'    => $startTime,
+                            'end_time'      => $endTime,
                         ]);
                     }
                 }
@@ -314,5 +380,336 @@ class DailyReportController extends Controller
         $m = $totalMinutes % 60;
         
         return ($h > 0 ? $h . 'h ' : '') . ($m > 0 ? $m . 'm' : '');
+    }
+
+    public function startTask(Request $request)
+    {
+        $request->validate([
+            'task_title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        // Prevent starting if another task is already in_progress
+        $activeTask = DailyReportTask::whereHas('dailyReport', function($q) {
+            $q->where('staff_id', Auth::id());
+        })->where('status', 'in_progress')->first();
+
+        if ($activeTask) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Aapka ek task pehle se live chal raha hai. Usse pause ya end karein pehle!'
+            ], 400);
+        }
+
+        // Find today's report for the staff, or create one
+        $today = now()->toDateString();
+        $report = DailyReport::firstOrCreate(
+            ['staff_id' => Auth::id(), 'report_date' => $today],
+            ['pending_task' => 'Live Task Tracking', 'planned_task' => 'Live Task Tracking']
+        );
+
+        $task = $report->tasks()->create([
+            'task_title' => $request->task_title,
+            'description' => $request->description,
+            'status' => 'in_progress',
+            'start_time' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Task started successfully', 'task' => $task]);
+    }
+
+    public function endTask(Request $request, DailyReportTask $task)
+    {
+        $request->validate([
+            'description' => 'nullable|string',
+        ]);
+
+        if ($task->dailyReport->staff_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $endTime = now();
+        
+        if ($task->status === 'in_progress') {
+            $startTime = $task->start_time ?: $task->created_at;
+            $diffInMinutes = $endTime->diffInMinutes($startTime);
+            $hours = floor($diffInMinutes / 60);
+            $minutes = $diffInMinutes % 60;
+            
+            $segmentTime = '';
+            if ($hours > 0) $segmentTime .= $hours . 'h ';
+            if ($minutes > 0) $segmentTime .= $minutes . 'm';
+            if ($segmentTime === '') $segmentTime = '1m';
+
+            $timeSpend = $this->sumTimeStrings($task->time_spend, $segmentTime);
+        } else {
+            $timeSpend = $task->time_spend;
+        }
+
+        $task->update([
+            'description' => $request->description ?: $task->description,
+            'status' => 'completed',
+            'end_time' => $endTime,
+            'time_spend' => trim($timeSpend)
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Task completed successfully', 'task' => $task]);
+    }
+
+    public static function autoCarryForwardPaused($staffId)
+    {
+        $today = now()->toDateString();
+
+        // Find the latest report before today
+        $lastReport = DailyReport::where('staff_id', $staffId)
+            ->where('report_date', '<', $today)
+            ->orderByDesc('report_date')
+            ->first();
+
+        if (!$lastReport) {
+            return false;
+        }
+
+        $pausedTasks = $lastReport->tasks()->where('status', 'paused')->get();
+
+        if ($pausedTasks->isEmpty()) {
+            return false;
+        }
+
+        // Get or create today's report
+        $todayReport = DailyReport::firstOrCreate(
+            ['staff_id' => $staffId, 'report_date' => $today],
+            ['pending_task' => 'Live Task Tracking', 'planned_task' => 'Live Task Tracking']
+        );
+
+        $instance = new self();
+
+        foreach ($pausedTasks as $pTask) {
+            // Check if already carried forward today
+            $alreadyExists = $todayReport->tasks()->where('task_title', $pTask->task_title)->exists();
+            if (!$alreadyExists) {
+                // Calculate accumulated previous time
+                $accumulatedTime = $instance->sumTimeStrings($pTask->previous_time, $pTask->time_spend);
+                
+                $todayReport->tasks()->create([
+                    'task_title' => $pTask->task_title,
+                    'description' => $pTask->description,
+                    'status' => 'paused', // carry forward as paused
+                    'is_carry' => true,
+                    'previous_time' => $accumulatedTime,
+                    'time_spend' => null
+                ]);
+            }
+        }
+        return true;
+    }
+
+    public function getTaskHistory(DailyReportTask $task)
+    {
+        // Find all tasks with the same title for this staff
+        $staffId = $task->dailyReport->staff_id;
+        $title = $task->task_title;
+
+        $historyTasks = DailyReportTask::whereHas('dailyReport', function($q) use ($staffId) {
+                $q->where('staff_id', $staffId);
+            })
+            ->where('task_title', $title)
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->orderBy('daily_reports.report_date', 'asc')
+            ->select('daily_report_tasks.*', 'daily_reports.report_date')
+            ->get();
+
+        $historyData = [];
+        $totalMinutes = 0;
+
+        foreach ($historyTasks as $hTask) {
+            $timeStr = $hTask->time_spend;
+            $mins = 0;
+            if ($timeStr) {
+                $ts = strtolower($timeStr);
+                if (preg_match('/(\d+)\s*h/', $ts, $m)) $mins += (int)$m[1] * 60;
+                if (preg_match('/(\d+)\s*m/', $ts, $m)) $mins += (int)$m[1];
+                if (preg_match('/(\d+):(\d+)/', $ts, $m)) $mins += (int)$m[1] * 60 + (int)$m[2];
+            }
+            
+            // Even if mins is 0, we show it if they worked on it or if it was created
+            if ($mins > 0 || $hTask->id === $task->id) {
+                $totalMinutes += $mins;
+                $historyData[] = [
+                    'date' => \Carbon\Carbon::parse($hTask->report_date)->format('d M Y'),
+                    'time_spend' => $timeStr ?: '0m',
+                    'status' => $hTask->status
+                ];
+            }
+        }
+
+        $h = floor($totalMinutes / 60);
+        $m = $totalMinutes % 60;
+        $totalTimeFormatted = ($h > 0 ? $h . 'h ' : '') . ($m > 0 ? $m . 'm' : '0m');
+
+        return response()->json([
+            'success' => true,
+            'task_title' => $title,
+            'history' => $historyData,
+            'total_time' => $totalTimeFormatted
+        ]);
+    }
+
+    public function pauseTask(Request $request, DailyReportTask $task)
+    {
+        if ($task->dailyReport->staff_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if ($task->status !== 'in_progress') {
+            return response()->json(['success' => false, 'message' => 'Only in-progress tasks can be paused'], 400);
+        }
+
+        $endTime = now();
+        $startTime = $task->start_time ?: $task->created_at;
+        
+        $diffInMinutes = $endTime->diffInMinutes($startTime);
+        $hours = floor($diffInMinutes / 60);
+        $minutes = $diffInMinutes % 60;
+        
+        $segmentTime = '';
+        if ($hours > 0) $segmentTime .= $hours . 'h ';
+        if ($minutes > 0) $segmentTime .= $minutes . 'm';
+        if ($segmentTime === '') $segmentTime = '1m';
+
+        // Sum with existing time_spend
+        $totalTime = $this->sumTimeStrings($task->time_spend, $segmentTime);
+
+        $task->update([
+            'status' => 'paused',
+            'time_spend' => trim($totalTime),
+            'end_time' => null, // Just paused, not finished
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Task paused successfully', 'task' => $task]);
+    }
+
+    public function resumeTask(Request $request, DailyReportTask $task)
+    {
+        if ($task->dailyReport->staff_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if ($task->status !== 'paused') {
+            return response()->json(['success' => false, 'message' => 'Only paused tasks can be resumed'], 400);
+        }
+
+        // Before resuming, ensure there is no other live/in_progress task!
+        $activeTask = DailyReportTask::whereHas('dailyReport', function($q) {
+            $q->where('staff_id', Auth::id());
+        })->where('status', 'in_progress')->first();
+
+        if ($activeTask) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Aapka ek task pehle se live chal raha hai. Usse pause ya end karein pehle!'
+            ], 400);
+        }
+
+        $task->update([
+            'status' => 'in_progress',
+            'start_time' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Task resumed successfully', 'task' => $task]);
+    }
+
+
+    public function liveTasks()
+    {
+        if (!in_array(Auth::user()->role, ['admin', 'manager'])) {
+            return abort(403, 'Unauthorized action.');
+        }
+
+        self::autoPauseMidnightTasks(null);
+
+        // Fetch all active staff
+        $query = User::with(['staff.department', 'staff.office'])
+            ->where('role', 'staff')
+            ->whereHas('staff', function($q) {
+                $q->where('status', 'active');
+            });
+            
+        // If manager, restrict to their office
+        if (Auth::user()->role === 'manager' && Auth::user()->staff) {
+            $officeId = Auth::user()->staff->office_id;
+            $query->whereHas('staff', function($q) use ($officeId) {
+                $q->where('office_id', $officeId);
+            });
+        }
+
+        $allStaff = $query->orderBy('name', 'asc')->get();
+
+        // Fetch today's tasks grouped by staff_id (both live and completed)
+        $todayTasks = DailyReportTask::whereHas('dailyReport', function($q) {
+                $q->whereDate('report_date', now()->toDateString());
+            })
+            ->with('dailyReport')
+            ->get()
+            ->groupBy(function($item) {
+                return $item->dailyReport->staff_id;
+            });
+
+        return view('DailyReport.LiveTasks', compact('allStaff', 'todayTasks'));
+    }
+
+    public static function autoPauseMidnightTasks($userId = null)
+    {
+        $query = DailyReportTask::whereHas('dailyReport', function($q) use ($userId) {
+            if ($userId) {
+                $q->where('staff_id', $userId);
+            }
+            $q->whereDate('report_date', '<', today());
+        })->where('status', 'in_progress');
+
+        $overdueTasks = $query->get();
+
+        foreach ($overdueTasks as $task) {
+            $reportDate = $task->dailyReport->report_date;
+            // Target end time is 18:30 (6:30 PM) of the report date
+            $endTime = \Carbon\Carbon::parse($reportDate)->setTime(18, 30, 0);
+            $startTime = $task->start_time ?: $task->created_at;
+
+            if ($endTime->greaterThan($startTime)) {
+                $diffInMinutes = $endTime->diffInMinutes($startTime);
+            } else {
+                $diffInMinutes = 1;
+            }
+
+            $hours = floor($diffInMinutes / 60);
+            $minutes = $diffInMinutes % 60;
+            
+            $segmentTime = '';
+            if ($hours > 0) $segmentTime .= $hours . 'h ';
+            if ($minutes > 0) $segmentTime .= $minutes . 'm';
+            if ($segmentTime === '') $segmentTime = '1m';
+
+            // Sum with existing time_spend
+            $totalMinutes = 0;
+            foreach ([$task->time_spend, $segmentTime] as $timeStr) {
+                if (!$timeStr) continue;
+                $ts = strtolower($timeStr);
+                if (preg_match('/(\d+)\s*h/', $ts, $m)) $totalMinutes += (int)$m[1] * 60;
+                if (preg_match('/(\d+)\s*m/', $ts, $m)) $totalMinutes += (int)$m[1];
+                if (preg_match('/(\d+):(\d+)/', $ts, $m)) $totalMinutes += (int)$m[1] * 60 + (int)$m[2];
+            }
+
+            $h = floor($totalMinutes / 60);
+            $m = $totalMinutes % 60;
+            
+            $totalTime = ($h > 0 ? $h . 'h ' : '') . ($m > 0 ? $m . 'm' : '');
+            if (trim($totalTime) === '') $totalTime = '1m';
+
+            $task->update([
+                'status' => 'paused',
+                'time_spend' => trim($totalTime),
+                'end_time' => null, // Just paused
+            ]);
+        }
     }
 }
