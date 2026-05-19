@@ -15,3 +15,5 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/electron-app/node_modules
+/electron-app/dist
