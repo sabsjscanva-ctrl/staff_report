@@ -11,6 +11,7 @@ class DailyReportTask extends Model
 
     protected $fillable = [
         'daily_report_id',
+        'source_task_id',
         'task_title',
         'description',
         'is_carry',

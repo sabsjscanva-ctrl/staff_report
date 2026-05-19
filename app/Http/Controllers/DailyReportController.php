@@ -106,14 +106,38 @@ class DailyReportController extends Controller
 
     public function create()
     {
-        // Fetch last report with incomplete tasks to carry forward
-        $lastReport = DailyReport::where('staff_id', Auth::id())
-            ->with(['tasks' => function($q) {
-                $q->where('status', '!=', 'completed');
-            }])
+        $today = now()->toDateString();
+        $staffId = Auth::id();
+
+        // Run self-healing backfill for legacy tasks
+        self::backfillLegacySourceTaskIds($staffId);
+
+        // Get the latest report to carry forward planned_task
+        $lastReport = DailyReport::where('staff_id', $staffId)
             ->orderByDesc('report_date')
             ->orderByDesc('id')
             ->first();
+
+        // Get all outstanding incomplete tasks across all reports before today
+        $incompleteTasks = DailyReportTask::select('daily_report_tasks.*')
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->where('daily_reports.staff_id', $staffId)
+            ->where('daily_reports.report_date', '<', $today)
+            ->where('daily_report_tasks.status', '!=', 'completed')
+            ->whereNotExists(function($query) {
+                $query->select(DB::raw(1))
+                    ->from('daily_report_tasks as t2')
+                    ->whereColumn('t2.source_task_id', 'daily_report_tasks.id');
+            })
+            ->get();
+
+        if ($lastReport) {
+            $lastReport->setRelation('tasks', $incompleteTasks);
+        } else {
+            $lastReport = new DailyReport();
+            $lastReport->planned_task = '';
+            $lastReport->setRelation('tasks', $incompleteTasks);
+        }
 
         return view('DailyReport.DailyReportCreate', compact('lastReport'));
     }
@@ -132,6 +156,7 @@ class DailyReportController extends Controller
             'tasks.*.time_spend'  => 'nullable|string|max:100',
             'tasks.*.start_time'  => 'nullable|string',
             'tasks.*.end_time'    => 'nullable|string',
+            'tasks.*.source_task_id' => 'nullable|integer|exists:daily_report_tasks,id',
         ]);
 
         DB::beginTransaction();
@@ -173,6 +198,7 @@ class DailyReportController extends Controller
                         }
 
                         $report->tasks()->create([
+                            'source_task_id'=> isset($task['source_task_id']) && $task['source_task_id'] !== '' ? $task['source_task_id'] : null,
                             'task_title'   => $task['task_title'],
                             'description'  => $task['description'] ?? null,
                             'is_carry'     => isset($task['is_carry']) && ($task['is_carry'] === 'true' || $task['is_carry'] === true),
@@ -213,6 +239,8 @@ class DailyReportController extends Controller
                 'email' => $dailyReport->staff->email,
             ] : null,
             'tasks'        => $dailyReport->tasks->map(fn($t) => [
+                'id'            => $t->id,
+                'source_task_id'=> $t->source_task_id,
                 'task_title'    => $t->task_title,
                 'description'   => $t->description,
                 'is_carry'      => $t->is_carry,
@@ -252,6 +280,7 @@ class DailyReportController extends Controller
             'tasks.*.time_spend'  => 'nullable|string|max:100',
             'tasks.*.start_time'  => 'nullable|string',
             'tasks.*.end_time'    => 'nullable|string',
+            'tasks.*.source_task_id' => 'nullable|integer|exists:daily_report_tasks,id',
         ]);
 
         DB::beginTransaction();
@@ -295,6 +324,7 @@ class DailyReportController extends Controller
                         }
 
                         $dailyReport->tasks()->create([
+                            'source_task_id'=> isset($task['source_task_id']) && $task['source_task_id'] !== '' ? $task['source_task_id'] : null,
                             'task_title'    => $task['task_title'],
                             'description'   => $task['description'] ?? null,
                             'is_carry'      => isset($task['is_carry']) && ($task['is_carry'] === 'true' || $task['is_carry'] === true),
@@ -328,31 +358,37 @@ class DailyReportController extends Controller
 
     public function getLastTasks(Request $request)
     {
-        $date = $request->get('date');
+        $date = $request->get('date') ?: now()->toDateString();
         $staffId = Auth::id();
 
-        // Get the latest report BEFORE the selected date
-        $query = DailyReport::where('staff_id', $staffId)
-            ->with(['tasks' => function($q) {
-                $q->where('status', '!=', 'completed');
-            }])
+        // Run self-healing backfill for legacy tasks
+        self::backfillLegacySourceTaskIds($staffId);
+
+        // Get the latest report BEFORE the selected date to carry forward planned_task
+        $lastReport = DailyReport::where('staff_id', $staffId)
+            ->where('report_date', '<', $date)
             ->orderByDesc('report_date')
-            ->orderByDesc('id');
+            ->orderByDesc('id')
+            ->first();
 
-        if ($date) {
-            $query->where('report_date', '<', $date);
-        }
-
-        $lastReport = $query->first();
-
-        if (!$lastReport) {
-            return response()->json(['success' => true, 'tasks' => [], 'pending_task' => '']);
-        }
+        // Get all outstanding incomplete tasks across all reports before the selected date
+        $incompleteTasks = DailyReportTask::select('daily_report_tasks.*')
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->where('daily_reports.staff_id', $staffId)
+            ->where('daily_reports.report_date', '<', $date)
+            ->where('daily_report_tasks.status', '!=', 'completed')
+            ->whereNotExists(function($query) {
+                $query->select(DB::raw(1))
+                    ->from('daily_report_tasks as t2')
+                    ->whereColumn('t2.source_task_id', 'daily_report_tasks.id');
+            })
+            ->get();
 
         return response()->json([
             'success' => true,
-            'pending_task' => $lastReport->planned_task,
-            'tasks' => $lastReport->tasks->map(fn($t) => [
+            'pending_task' => $lastReport ? $lastReport->planned_task : '',
+            'tasks' => $incompleteTasks->map(fn($t) => [
+                'source_task_id'=> $t->id,
                 'task_title'    => $t->task_title,
                 'description'   => $t->description,
                 'status'        => $t->status,
@@ -460,17 +496,21 @@ class DailyReportController extends Controller
     {
         $today = now()->toDateString();
 
-        // Find the latest report before today
-        $lastReport = DailyReport::where('staff_id', $staffId)
-            ->where('report_date', '<', $today)
-            ->orderByDesc('report_date')
-            ->first();
+        // Run self-healing backfill for legacy tasks
+        self::backfillLegacySourceTaskIds($staffId);
 
-        if (!$lastReport) {
-            return false;
-        }
-
-        $pausedTasks = $lastReport->tasks()->where('status', 'paused')->get();
+        // Find all paused tasks across all previous reports that have not been superseded by any subsequent task
+        $pausedTasks = DailyReportTask::select('daily_report_tasks.*')
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->where('daily_reports.staff_id', $staffId)
+            ->where('daily_reports.report_date', '<', $today)
+            ->where('daily_report_tasks.status', 'paused')
+            ->whereNotExists(function($query) {
+                $query->select(DB::raw(1))
+                    ->from('daily_report_tasks as t2')
+                    ->whereColumn('t2.source_task_id', 'daily_report_tasks.id');
+            })
+            ->get();
 
         if ($pausedTasks->isEmpty()) {
             return false;
@@ -486,12 +526,13 @@ class DailyReportController extends Controller
 
         foreach ($pausedTasks as $pTask) {
             // Check if already carried forward today
-            $alreadyExists = $todayReport->tasks()->where('task_title', $pTask->task_title)->exists();
+            $alreadyExists = $todayReport->tasks()->where('source_task_id', $pTask->id)->exists();
             if (!$alreadyExists) {
                 // Calculate accumulated previous time
                 $accumulatedTime = $instance->sumTimeStrings($pTask->previous_time, $pTask->time_spend);
                 
                 $todayReport->tasks()->create([
+                    'source_task_id' => $pTask->id,
                     'task_title' => $pTask->task_title,
                     'description' => $pTask->description,
                     'status' => 'paused', // carry forward as paused
@@ -710,6 +751,46 @@ class DailyReportController extends Controller
                 'time_spend' => trim($totalTime),
                 'end_time' => null, // Just paused
             ]);
+        }
+    }
+
+    private static function backfillLegacySourceTaskIds($staffId)
+    {
+        $carryTasks = DailyReportTask::select('daily_report_tasks.id', 'daily_report_tasks.task_title', 'daily_reports.report_date', 'daily_reports.id as report_id')
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->where('daily_reports.staff_id', $staffId)
+            ->where('daily_report_tasks.is_carry', true)
+            ->whereNull('daily_report_tasks.source_task_id')
+            ->orderBy('daily_reports.report_date', 'asc')
+            ->orderBy('daily_reports.id', 'asc')
+            ->orderBy('daily_report_tasks.id', 'asc')
+            ->get();
+
+        foreach ($carryTasks as $ct) {
+            $sourceTask = DailyReportTask::select('daily_report_tasks.id')
+                ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+                ->where('daily_reports.staff_id', $staffId)
+                ->where('daily_report_tasks.task_title', $ct->task_title)
+                ->where(function($q) use ($ct) {
+                    $q->where('daily_reports.report_date', '<', $ct->report_date)
+                      ->orWhere(function($q2) use ($ct) {
+                          $q2->where('daily_reports.report_date', '=', $ct->report_date)
+                             ->where('daily_reports.id', '<', $ct->report_id);
+                      });
+                })
+                ->whereNotExists(function($query) {
+                    $query->select(DB::raw(1))
+                        ->from('daily_report_tasks as t3')
+                        ->whereColumn('t3.source_task_id', 'daily_report_tasks.id');
+                })
+                ->orderByDesc('daily_reports.report_date')
+                ->orderByDesc('daily_reports.id')
+                ->orderByDesc('daily_report_tasks.id')
+                ->first();
+
+            if ($sourceTask) {
+                DailyReportTask::where('id', $ct->id)->update(['source_task_id' => $sourceTask->id]);
+            }
         }
     }
 }

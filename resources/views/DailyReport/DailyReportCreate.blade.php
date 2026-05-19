@@ -251,6 +251,8 @@
             `<option value="${s}" ${selectedStatus === s ? 'selected' : ''}>${statusLabels[s]}</option>`
         ).join('');
 
+        const sourceTaskId = IS_EDIT ? (data.source_task_id || '') : (data.source_task_id || data.id || '');
+
         return `
         <div class="task-row border ${isCarry ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200 bg-gray-50'} rounded-xl p-5 relative mb-4" data-index="${index}">
             <div class="flex items-center justify-between mb-4">
@@ -269,6 +271,7 @@
 
             <input type="hidden" name="tasks[${index}][is_carry]" value="${isCarry}">
             <input type="hidden" name="tasks[${index}][previous_time]" value="${data.previous_time || ''}">
+            <input type="hidden" name="tasks[${index}][source_task_id]" value="${sourceTaskId}">
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 

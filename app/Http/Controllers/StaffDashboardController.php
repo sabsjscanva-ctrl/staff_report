@@ -16,6 +16,9 @@ class StaffDashboardController extends Controller
 
     public function index()
     {
+        \App\Http\Controllers\DailyReportController::autoPauseMidnightTasks(Auth::id());
+        \App\Http\Controllers\DailyReportController::autoCarryForwardPaused(Auth::id());
+
         $staffDetail = StaffModel::with(['department', 'office'])
             ->where('user_id', Auth::id())
             ->first();
