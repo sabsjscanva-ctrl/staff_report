@@ -9,6 +9,54 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+        .truncate-2-lines {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+        /* Toast Notification Styling */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 360px;
+            width: calc(100% - 48px);
+        }
+        .toast-notification {
+            background: rgba(255, 255, 255, 0.98);
+            border-left: 4px solid #4f46e5;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .toast-notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast-notification.hide {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
     <nav class="glass-nav text-white">
@@ -217,6 +265,30 @@
 
                 <!-- Right side: User Info & Logout (Desktop) -->
                 <div class="hidden md:flex items-center gap-4">
+                    <!-- Notifications Dropdown -->
+                    <div class="relative" id="notifications-menu-wrapper">
+                        <button onclick="toggleNotificationsMenu(); requestNotificationPermission()" class="relative p-2 text-white hover:text-indigo-200 transition focus:outline-none flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="notification-badge" class="hidden absolute top-1 right-1 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[15px] text-center border-2 border-slate-900 leading-none">0</span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white text-gray-700 rounded-xl shadow-2xl py-2 z-50 border border-gray-100 divide-y divide-gray-100 transition-all duration-200 origin-top-right transform">
+                            <div class="px-4 py-2 flex items-center justify-between bg-slate-50/50 rounded-t-xl">
+                                <span class="font-bold text-sm text-gray-800">Notifications</span>
+                                <button onclick="markAllNotificationsAsRead()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition focus:outline-none">Mark all as read</button>
+                            </div>
+                            <div id="notification-items" class="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                                <div class="px-4 py-6 text-center text-xs text-gray-400">
+                                    No new notifications.
+                                </div>
+                            </div>
+                            <div class="px-4 py-2 text-center bg-gray-50 rounded-b-xl">
+                                <a href="{{ route('it-tickets.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition">View IT Support Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="relative" id="profile-menu-wrapper">
                         <button onclick="toggleProfileMenu()" onmouseenter="openProfileMenu()" class="flex items-center gap-1 text-sm font-medium focus:outline-none hover:text-indigo-200 transition">
                             <span class="whitespace-nowrap">{{ Auth::user()->name }}</span>
@@ -236,8 +308,32 @@
                     </div>
                 </div>
 
-                <!-- Mobile Menu Button -->
-                <div class="md:hidden flex items-center">
+                <!-- Mobile Menu Button & Mobile Notifications -->
+                <div class="md:hidden flex items-center gap-2">
+                    <!-- Mobile Notifications Bell -->
+                    <div class="relative" id="mobile-notifications-menu-wrapper">
+                        <button onclick="toggleMobileNotificationsMenu(); requestNotificationPermission()" class="relative p-2 text-white hover:text-indigo-200 transition focus:outline-none flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="mobile-notification-badge" class="hidden absolute top-1 right-1 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[15px] text-center border border-slate-900 leading-none">0</span>
+                        </button>
+                        <div id="mobile-notifications-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white text-gray-700 rounded-xl shadow-2xl py-2 z-50 border border-gray-100 divide-y divide-gray-100">
+                            <div class="px-4 py-2 flex items-center justify-between bg-slate-50/50 rounded-t-xl">
+                                <span class="font-bold text-xs text-gray-800">Notifications</span>
+                                <button onclick="markAllNotificationsAsRead()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold transition focus:outline-none">Mark all as read</button>
+                            </div>
+                            <div id="mobile-notification-items" class="max-h-60 overflow-y-auto divide-y divide-gray-50">
+                                <div class="px-4 py-4 text-center text-[10px] text-gray-400">
+                                    No new notifications.
+                                </div>
+                            </div>
+                            <div class="px-4 py-2 text-center bg-gray-50 rounded-b-xl">
+                                <a href="{{ route('it-tickets.index') }}" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-medium transition">View IT Support Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <button onclick="toggleMobileMenu()" class="text-white hover:text-indigo-200 focus:outline-none p-2 rounded-md bg-indigo-600">
                         <svg id="mobile-menu-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
@@ -375,6 +471,12 @@
         function toggleProfileMenu() {
             document.getElementById('profile-dropdown').classList.toggle('hidden');
         }
+        function toggleNotificationsMenu() {
+            document.getElementById('notifications-dropdown').classList.toggle('hidden');
+        }
+        function toggleMobileNotificationsMenu() {
+            document.getElementById('mobile-notifications-dropdown').classList.toggle('hidden');
+        }
 
         // Close dropdowns when clicking outside
         document.addEventListener('click', function (e) {
@@ -385,7 +487,9 @@
                 { wrapper: 'it-menu-wrapper', dropdown: 'it-dropdown' },
                 { wrapper: 'stock-menu-wrapper', dropdown: 'stock-dropdown' },
                 { wrapper: 'dailyreport-menu-wrapper', dropdown: 'dailyreport-dropdown' },
-                { wrapper: 'profile-menu-wrapper', dropdown: 'profile-dropdown' }
+                { wrapper: 'profile-menu-wrapper', dropdown: 'profile-dropdown' },
+                { wrapper: 'notifications-menu-wrapper', dropdown: 'notifications-dropdown' },
+                { wrapper: 'mobile-notifications-menu-wrapper', dropdown: 'mobile-notifications-dropdown' }
             ];
 
             dropdowns.forEach(item => {
@@ -440,6 +544,235 @@
                 }
             }).catch(e => console.log('Session keep-alive failed'));
         }, 5 * 60 * 1000); // Every 5 minutes
+
+        // Notifications System Logic
+        let lastNotificationCount = null;
+
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                if (Notification.permission === "default") {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        function playNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Chime note 1
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                gain1.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.12);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start();
+                osc1.stop(audioCtx.currentTime + 0.12);
+
+                // Chime note 2
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                    gain2.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.3);
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.3);
+                }, 100);
+            } catch (e) {
+                console.warn("Web Audio chime failed", e);
+            }
+        }
+
+        function showInAppToast(title, message, url, type) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            
+            let borderColor = '#4f46e5'; // Indigo default
+            if (type === 'it_ticket_created') borderColor = '#10b981'; // Emerald
+            if (type === 'it_ticket_status') borderColor = '#f59e0b'; // Amber
+            if (type === 'it_ticket_time') borderColor = '#3b82f6'; // Blue
+            toast.style.borderLeftColor = borderColor;
+
+            toast.innerHTML = `
+                <div class="flex-shrink-0 mt-0.5">
+                    ${getNotificationIcon(type)}
+                </div>
+                <div class="flex-1 min-w-0" onclick="window.location.href='${url}'">
+                    <h4 class="text-xs font-bold text-gray-900">${title}</h4>
+                    <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">${message}</p>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600 transition flex-shrink-0 focus:outline-none" onclick="event.stopPropagation(); this.closest('.toast-notification').classList.replace('show', 'hide'); setTimeout(() => this.closest('.toast-notification').remove(), 400)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 50);
+
+            // Auto-remove after 6 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.classList.replace('show', 'hide');
+                    setTimeout(() => toast.remove(), 400);
+                }
+            }, 6000);
+        }
+
+        function fetchNotifications() {
+            fetch('{{ route('notifications.index') }}')
+                .then(response => response.json())
+                .then(data => {
+                    updateNotificationUI(data.notifications, data.unread_count);
+                    
+                    if (lastNotificationCount !== null && data.unread_count > lastNotificationCount) {
+                        playNotificationSound();
+                        
+                        if (data.notifications.length > 0) {
+                            const latest = data.notifications[0];
+                            if (latest && !latest.is_read) {
+                                // 1. Trigger desktop system notification (WhatsApp style, works even when tab is background)
+                                showDesktopNotification(latest.title, latest.message, latest.id);
+                                // 2. Trigger beautifully styled in-app Toast notification (bottom right corner)
+                                showInAppToast(latest.title, latest.message, `/notifications/${latest.id}/read`, latest.type);
+                            }
+                        }
+                    }
+                    lastNotificationCount = data.unread_count;
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        function showDesktopNotification(title, message, id) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                const notification = new Notification(title, {
+                    body: message,
+                    tag: 'ticket-' + id,
+                    requireInteraction: false
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    window.location.href = `/notifications/${id}/read`;
+                };
+            }
+        }
+
+        function updateNotificationUI(notifications, unreadCount) {
+            const badges = [
+                document.getElementById('notification-badge'),
+                document.getElementById('mobile-notification-badge')
+            ];
+            
+            badges.forEach(badge => {
+                if (badge) {
+                    if (unreadCount > 0) {
+                        badge.innerText = unreadCount;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            });
+
+            const desktopContainer = document.getElementById('notification-items');
+            const mobileContainer = document.getElementById('mobile-notification-items');
+            
+            const htmlContent = notifications.length > 0 
+                ? notifications.map(n => `
+                    <a href="/notifications/${n.id}/read" class="block px-4 py-3 hover:bg-slate-50 transition ${!n.is_read ? 'bg-indigo-50/40' : ''}">
+                        <div class="flex items-start gap-2.5">
+                            <div class="mt-0.5 flex-shrink-0">
+                                ${getNotificationIcon(n.type)}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold ${!n.is_read ? 'text-indigo-950 font-bold' : 'text-gray-700'} truncate-2-lines">${n.title}</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">${n.message}</p>
+                                <span class="text-[9px] text-gray-400 block mt-1">${formatTimeAgo(n.created_at)}</span>
+                            </div>
+                            ${!n.is_read ? `<span class="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-2 flex-shrink-0"></span>` : ''}
+                        </div>
+                    </a>
+                `).join('')
+                : `<div class="px-4 py-8 text-center text-xs text-gray-400">No new notifications</div>`;
+
+            if (desktopContainer) desktopContainer.innerHTML = htmlContent;
+            if (mobileContainer) mobileContainer.innerHTML = htmlContent;
+        }
+
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'it_ticket_created':
+                    return `<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></span>`;
+                case 'it_ticket_reply':
+                    return `<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></span>`;
+                case 'it_ticket_status':
+                    return `<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-50 text-amber-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></span>`;
+                case 'it_ticket_time':
+                    return `<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-blue-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>`;
+                default:
+                    return `<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-50 text-gray-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></span>`;
+            }
+        }
+
+        function formatTimeAgo(dateString) {
+            try {
+                const date = new Date(dateString);
+                const seconds = Math.floor((new Date() - date) / 1000);
+                
+                let interval = Math.floor(seconds / 31536000);
+                if (interval >= 1) return interval + " years ago";
+                interval = Math.floor(seconds / 2592000);
+                if (interval >= 1) return interval + " months ago";
+                interval = Math.floor(seconds / 86400);
+                if (interval >= 1) return interval + " days ago";
+                interval = Math.floor(seconds / 3600);
+                if (interval >= 1) return interval + " hours ago";
+                interval = Math.floor(seconds / 60);
+                if (interval >= 1) return interval + " minutes ago";
+                return seconds < 10 ? "Just now" : Math.floor(seconds) + " seconds ago";
+            } catch(e) {
+                return "some time ago";
+            }
+        }
+
+        function markAllNotificationsAsRead() {
+            fetch('{{ route('notifications.read-all') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    fetchNotifications();
+                }
+            })
+            .catch(error => console.error('Error marking all as read:', error));
+        }
+
+        // Initialize and poll
+        requestNotificationPermission();
+        fetchNotifications();
+        setInterval(fetchNotifications, 10000); // Check every 10 seconds
     </script>
 </body>
 </html>

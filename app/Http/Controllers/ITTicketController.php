@@ -124,6 +124,21 @@ class ITTicketController extends Controller
             'status'            => 'Pending',
         ]);
 
+        // Notify IT department users
+        $itUsers = \App\Models\User::all()->filter(function($u) {
+            return $u->canAccessIT() && $u->id !== Auth::id();
+        });
+
+        foreach ($itUsers as $user) {
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'title'   => 'New IT Ticket Raised',
+                'message' => Auth::user()->name . ' has raised a ticket: "' . $ticket->subject . '"',
+                'url'     => route('it-tickets.show', $ticket->id),
+                'type'    => 'it_ticket_created',
+            ]);
+        }
+
         return redirect()->route('it-tickets.index')->with('success', 'Ticket successfully raise kar diya gaya hai!');
     }
 
@@ -169,6 +184,45 @@ class ITTicketController extends Controller
             'message'    => $request->message,
             'attachment' => $attachmentPath,
         ]);
+
+        // Send notifications for the reply
+        if ($itTicket->staff_id === $user->id) {
+            // Staff replied: Notify assigned IT staff, or all IT staff if none is assigned yet
+            $recipients = collect();
+            if ($itTicket->it_staff_id) {
+                if ($itTicket->it_staff_id !== $user->id) {
+                    $recipients->push(\App\Models\User::find($itTicket->it_staff_id));
+                }
+            } else {
+                $itUsers = \App\Models\User::all()->filter(function($u) use ($user) {
+                    return $u->canAccessIT() && $u->id !== $user->id;
+                });
+                $recipients = $recipients->concat($itUsers);
+            }
+
+            foreach ($recipients as $recipient) {
+                if ($recipient) {
+                    \App\Models\Notification::create([
+                        'user_id' => $recipient->id,
+                        'title'   => 'New Ticket Message',
+                        'message' => $user->name . ' replied: "' . \Illuminate\Support\Str::limit($request->message, 80) . '"',
+                        'url'     => route('it-tickets.show', $itTicket->id),
+                        'type'    => 'it_ticket_reply',
+                    ]);
+                }
+            }
+        } else {
+            // IT staff/admin replied: Notify the staff member who created the ticket
+            if ($itTicket->staff_id !== $user->id) {
+                \App\Models\Notification::create([
+                    'user_id' => $itTicket->staff_id,
+                    'title'   => 'New Message on Your Ticket',
+                    'message' => $user->name . ' replied: "' . \Illuminate\Support\Str::limit($request->message, 80) . '"',
+                    'url'     => route('it-tickets.show', $itTicket->id),
+                    'type'    => 'it_ticket_reply',
+                ]);
+            }
+        }
 
         return back()->with('success', 'Reply bhej di gayi hai!');
     }
@@ -220,6 +274,17 @@ class ITTicketController extends Controller
 
         $itTicket->update($data);
 
+        // Notify staff member about status change
+        if ($itTicket->staff_id !== Auth::id()) {
+            \App\Models\Notification::create([
+                'user_id' => $itTicket->staff_id,
+                'title'   => 'Ticket Status Updated',
+                'message' => 'Your ticket status has been changed to "' . $newStatus . '" by ' . Auth::user()->name,
+                'url'     => route('it-tickets.show', $itTicket->id),
+                'type'    => 'it_ticket_status',
+            ]);
+        }
+
         return back()->with('success', 'Ticket status update kar diya gaya hai!');
     }
 
@@ -237,6 +302,17 @@ class ITTicketController extends Controller
             'expected_arrival_time' => $request->expected_arrival_time,
             'it_staff_id'           => Auth::id(),
         ]);
+
+        // Notify staff member about expected arrival time
+        if ($itTicket->staff_id !== Auth::id()) {
+            \App\Models\Notification::create([
+                'user_id' => $itTicket->staff_id,
+                'title'   => 'IT Support Scheduled',
+                'message' => 'IT support arrival time is set to: ' . \Carbon\Carbon::parse($request->expected_arrival_time)->format('d M Y, h:i A'),
+                'url'     => route('it-tickets.show', $itTicket->id),
+                'type'    => 'it_ticket_time',
+            ]);
+        }
 
         return back()->with('success', 'Time assign kar diya gaya hai!');
     }

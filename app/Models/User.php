@@ -69,6 +69,11 @@ class User extends Authenticatable
         return $this->hasOne(\App\Models\Staff\StaffModel::class, 'user_id');
     }
 
+    public function notifications()
+    {
+        return $this->hasMany(\App\Models\Notification::class)->latest();
+    }
+
     public function canAccessIT(): bool
     {
         if ($this->role === 'IT DEPARTMENT') {

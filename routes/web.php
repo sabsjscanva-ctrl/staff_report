@@ -48,6 +48,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile-requests', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'index'])->name('profile.requests.index');
     Route::post('/profile-requests/{id}/approve', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'approve'])->name('profile.requests.approve');
     Route::post('/profile-requests/{id}/reject', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'reject'])->name('profile.requests.reject');
+
+    // Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
+    });
 });
 
 // Office Management (Admin only)
