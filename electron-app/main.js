@@ -17,6 +17,7 @@ function createWindow() {
         width: 1280,
         height: 800,
         title: "Staff Daily Report",
+        icon: path.join(__dirname, 'icon.ico'),
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: false,
@@ -32,6 +33,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    if (process.platform === 'win32') {
+        app.setAppUserModelId('com.staffdailyreport.app');
+    }
     createWindow();
 
     app.on('activate', () => {
