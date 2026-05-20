@@ -64,7 +64,7 @@ class StaffDashboardController extends Controller
             }
         }
 
-        return view('staff.dashboard', [
+        return view('Staff.dashboard', [
             'staffDetail' => $staffDetail,
             'totalReports' => $totalReports,
             'todayReport' => $todayReport,
@@ -102,7 +102,7 @@ class StaffDashboardController extends Controller
 
         $todayTasks = $todayReport ? $todayReport->tasks()->orderBy('created_at', 'asc')->get() : collect();
 
-        return view('staff.track-task', [
+        return view('Staff.track-task', [
             'staffDetail' => $staffDetail,
             'todayReport' => $todayReport,
             'activeTask' => $activeTask,
@@ -112,6 +112,6 @@ class StaffDashboardController extends Controller
 
     public function guide()
     {
-        return view('staff.guide');
+        return view('Staff.guide');
     }
 }
