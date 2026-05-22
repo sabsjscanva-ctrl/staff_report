@@ -295,6 +295,9 @@
                                                         <button type="button" onclick="viewTaskHistory({{ $task->id }})" class="text-indigo-400 hover:text-indigo-600 transition" title="View Time History">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                         </button>
+                                                        <a href="{{ route('daily-report.task.report', $task->id) }}" target="_blank" class="text-emerald-400 hover:text-emerald-600 transition" title="View Full Report (PDF/Excel)">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                        </a>
                                                     </div>
                                                     @if($task->is_carry)
                                                         <span class="text-[8px] font-bold text-amber-500 bg-amber-50/60 px-1 py-0.2 rounded border border-amber-100/40 uppercase tracking-wider scale-95 origin-left">Continued</span>

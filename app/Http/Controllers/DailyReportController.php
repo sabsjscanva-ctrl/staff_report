@@ -862,4 +862,101 @@ class DailyReportController extends Controller
             }
         }
     }
+
+    public function taskReport(DailyReportTask $task)
+    {
+        $staffId = $task->dailyReport->staff_id;
+        $title = $task->task_title;
+
+        $historyTasks = DailyReportTask::whereHas('dailyReport', function($q) use ($staffId) {
+                $q->where('staff_id', $staffId);
+            })
+            ->where('task_title', $title)
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->orderBy('daily_reports.report_date', 'asc')
+            ->select('daily_report_tasks.*', 'daily_reports.report_date')
+            ->get();
+
+        $historyData = [];
+        $totalMinutes = 0;
+
+        foreach ($historyTasks as $hTask) {
+            $timeStr = $hTask->time_spend;
+            $mins = 0;
+            if ($timeStr) {
+                $ts = strtolower($timeStr);
+                if (preg_match('/(\d+)\s*h/', $ts, $m)) $mins += (int)$m[1] * 60;
+                if (preg_match('/(\d+)\s*m/', $ts, $m)) $mins += (int)$m[1];
+                if (preg_match('/(\d+):(\d+)/', $ts, $m)) $mins += (int)$m[1] * 60 + (int)$m[2];
+            }
+            
+            if ($mins > 0 || $hTask->id === $task->id || $hTask->status == 'completed' || $hTask->status == 'idle') {
+                $totalMinutes += $mins;
+                $historyData[] = [
+                    'date' => \Carbon\Carbon::parse($hTask->report_date)->format('d M Y'),
+                    'time_spend' => $timeStr ?: '0m',
+                    'status' => $hTask->status,
+                    'description' => $hTask->description
+                ];
+            }
+        }
+
+        $h = floor($totalMinutes / 60);
+        $m = $totalMinutes % 60;
+        $totalTimeFormatted = ($h > 0 ? $h . 'h ' : '') . ($m > 0 ? $m . 'm' : '0m');
+
+        return view('DailyReport.TaskReport', compact('task', 'title', 'historyData', 'totalTimeFormatted'));
+    }
+
+    public function exportTaskReport(Request $request, DailyReportTask $task, $format)
+    {
+        $staffId = $task->dailyReport->staff_id;
+        $title = $task->task_title;
+
+        $historyTasks = DailyReportTask::whereHas('dailyReport', function($q) use ($staffId) {
+                $q->where('staff_id', $staffId);
+            })
+            ->where('task_title', $title)
+            ->join('daily_reports', 'daily_report_tasks.daily_report_id', '=', 'daily_reports.id')
+            ->orderBy('daily_reports.report_date', 'asc')
+            ->select('daily_report_tasks.*', 'daily_reports.report_date')
+            ->get();
+
+        $historyData = [];
+        $totalMinutes = 0;
+
+        foreach ($historyTasks as $hTask) {
+            $timeStr = $hTask->time_spend;
+            $mins = 0;
+            if ($timeStr) {
+                $ts = strtolower($timeStr);
+                if (preg_match('/(\d+)\s*h/', $ts, $m)) $mins += (int)$m[1] * 60;
+                if (preg_match('/(\d+)\s*m/', $ts, $m)) $mins += (int)$m[1];
+                if (preg_match('/(\d+):(\d+)/', $ts, $m)) $mins += (int)$m[1] * 60 + (int)$m[2];
+            }
+            
+            if ($mins > 0 || $hTask->id === $task->id || $hTask->status == 'completed' || $hTask->status == 'idle') {
+                $totalMinutes += $mins;
+                $historyData[] = [
+                    'date' => \Carbon\Carbon::parse($hTask->report_date)->format('d M Y'),
+                    'time_spend' => $timeStr ?: '0m',
+                    'status' => $hTask->status,
+                    'description' => $hTask->description
+                ];
+            }
+        }
+
+        $h = floor($totalMinutes / 60);
+        $m = $totalMinutes % 60;
+        $totalTimeFormatted = ($h > 0 ? $h . 'h ' : '') . ($m > 0 ? $m . 'm' : '0m');
+
+        if ($format === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('DailyReport.TaskReportPDF', compact('task', 'title', 'historyData', 'totalTimeFormatted'));
+            return $pdf->download('Task_Report_' . str_replace(' ', '_', $title) . '.pdf');
+        } elseif ($format === 'excel') {
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\TaskReportExport($title, $historyData, $totalTimeFormatted, $task->dailyReport->staff->name ?? ''), 'Task_Report_' . str_replace(' ', '_', $title) . '.xlsx');
+        }
+
+        abort(404);
+    }
 }

@@ -116,6 +116,8 @@ Route::middleware('auth')->prefix('daily-report')->name('daily-report.')->group(
     Route::post('/task/{task}/resume', [DailyReportController::class, 'resumeTask'])->name('task.resume');
     Route::post('/task/{task}/update-desc', [DailyReportController::class, 'updateTaskDescription'])->name('task.update-desc');
     Route::get('/task/{task}/history', [DailyReportController::class, 'getTaskHistory'])->name('task.history');
+    Route::get('/task/{task}/report', [DailyReportController::class, 'taskReport'])->name('task.report');
+    Route::get('/task/{task}/export/{format}', [DailyReportController::class, 'exportTaskReport'])->name('task.export');
     
     Route::get('/export',    [DailyReportController::class, 'export'])->name('export');
 
