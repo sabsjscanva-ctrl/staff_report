@@ -147,12 +147,9 @@
                                 <td class="p-0 border-r border-slate-100 focus-within:bg-indigo-50/50">
                                     <select name="{{ $prefix }}[location]" class="w-full h-14 bg-transparent border-none text-[10px] font-bold text-slate-500 focus:ring-0 px-4 cursor-pointer uppercase">
                                         <option value="">-</option>
-                                        <option value="DRIVE" {{ ($backup && $backup->location == 'DRIVE') ? 'selected' : '' }}>DRIVE</option>
-                                        <option value="HDD" {{ ($backup && $backup->location == 'HDD') ? 'selected' : '' }}>HARD DISK</option>
-                                        <option value="PENDRIVE" {{ ($backup && $backup->location == 'PENDRIVE') ? 'selected' : '' }}>PENDRIVE</option>
-                                        <option value="PENDRIVE/DRIVE" {{ ($backup && $backup->location == 'PENDRIVE/DRIVE') ? 'selected' : '' }}>PEN+DRIVE</option>
-                                        <option value="LAPTOP" {{ ($backup && $backup->location == 'LAPTOP') ? 'selected' : '' }}>LOCAL MACHINE</option>
-                                        <option value="SOFTWARE" {{ ($backup && $backup->location == 'SOFTWARE') ? 'selected' : '' }}>SOFTWARE</option>
+                                        @foreach($locations as $loc)
+                                            <option value="{{ $loc->name }}" {{ ($backup && $backup->location == $loc->name) ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
                                 

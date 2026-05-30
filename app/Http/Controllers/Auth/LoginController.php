@@ -27,6 +27,26 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, true)) {
             $request->session()->regenerate();
 
+            // Auto-fill missing daily backup for the last working day
+            if (Auth::user()->staff) {
+                $checkDate = \Carbon\Carbon::yesterday();
+                if ($checkDate->isSunday()) {
+                    $checkDate->subDay(); // If yesterday was Sunday, check Saturday instead
+                }
+                
+                $checkDateStr = $checkDate->toDateString();
+                $staffId = Auth::user()->staff->id;
+                
+                if (!\App\Models\SystemBackup::where('staff_id', $staffId)->whereDate('backup_date', $checkDateStr)->exists()) {
+                    \App\Models\SystemBackup::create([
+                        'staff_id' => $staffId,
+                        'backup_date' => $checkDateStr,
+                        'status' => 'NO',
+                        'remark' => 'NO-FILL',
+                    ]);
+                }
+            }
+
             return $this->redirectByRole(Auth::user()->role);
         }
 

@@ -41,6 +41,13 @@ Route::middleware(['auth', 'role:staff'])->prefix('staff')->name('staff.')->grou
     Route::post('/profile-update-request', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'store'])->name('profile.update.request');
 });
 
+// All Staff (including IT, Admin, Manager) can access Daily Backup
+Route::middleware(['auth'])->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/daily-backup', [\App\Http\Controllers\SystemBackupController::class, 'index'])->name('daily-backup.index');
+    Route::get('/daily-backup/create', [\App\Http\Controllers\SystemBackupController::class, 'create'])->name('daily-backup.create');
+    Route::post('/daily-backup', [\App\Http\Controllers\SystemBackupController::class, 'store'])->name('daily-backup.store');
+});
+
 Route::middleware('auth')->group(function () {
     Route::post('/change-password', [\App\Http\Controllers\ProfileUpdateRequestController::class, 'changePassword'])->name('password.update');
     
@@ -77,11 +84,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('staff')->name('staff.')->grou
 
 // IT Management (IT Dept only)
 Route::middleware(['auth', 'role:IT DEPARTMENT'])->prefix('it-management')->name('it-management.')->group(function () {
-    Route::get('/allotment', [\App\Http\Controllers\ITManagementController::class, 'allotmentIndex'])->name('allotment.index');
-    Route::post('/allotment', [\App\Http\Controllers\ITManagementController::class, 'allotmentStore'])->name('allotment.store');
-    
-    Route::get('/backup', [\App\Http\Controllers\ITManagementController::class, 'backupIndex'])->name('backup.index');
-    Route::post('/backup', [\App\Http\Controllers\ITManagementController::class, 'backupStore'])->name('backup.store');
+    Route::get('/backup-locations', [\App\Http\Controllers\ITManagementController::class, 'backupLocationsIndex'])->name('backup-locations.index');
+    Route::post('/backup-locations', [\App\Http\Controllers\ITManagementController::class, 'backupLocationsStore'])->name('backup-locations.store');
+    Route::delete('/backup-locations/{id}', [\App\Http\Controllers\ITManagementController::class, 'backupLocationsDestroy'])->name('backup-locations.destroy');
+
+    Route::get('/backup-reports', [\App\Http\Controllers\ITManagementController::class, 'backupReportsIndex'])->name('backup-reports.index');
+    Route::get('/backup-reports/export/pdf', [\App\Http\Controllers\ITManagementController::class, 'backupReportsExportPdf'])->name('backup-reports.export-pdf');
+    Route::get('/backup-reports/export/excel', [\App\Http\Controllers\ITManagementController::class, 'backupReportsExportExcel'])->name('backup-reports.export-excel');
+
+    Route::get('/backup-defaulters', [\App\Http\Controllers\ITManagementController::class, 'defaultersIndex'])->name('backup-defaulters.index');
+    Route::get('/backup-defaulters/export/pdf', [\App\Http\Controllers\ITManagementController::class, 'defaultersExportPdf'])->name('backup-defaulters.export-pdf');
+    Route::get('/backup-defaulters/export/excel', [\App\Http\Controllers\ITManagementController::class, 'defaultersExportExcel'])->name('backup-defaulters.export-excel');
 });
 
 // Stock Management (IT Dept only)

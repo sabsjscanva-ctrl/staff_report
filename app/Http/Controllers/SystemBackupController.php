@@ -10,9 +10,23 @@ class SystemBackupController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        //
+        $staff = auth()->user()->staff;
+        if (!$staff) {
+            return back()->with('error', 'Staff profile not found.');
+        }
+
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+
+        $backups = SystemBackup::where('staff_id', $staff->id)
+            ->whereYear('backup_date', $year)
+            ->whereMonth('backup_date', $month)
+            ->orderBy('backup_date', 'desc')
+            ->get();
+
+        return view('Staff.StaffBackupView', compact('backups', 'month', 'year'));
     }
 
     /**
@@ -20,7 +34,17 @@ class SystemBackupController extends Controller
      */
     public function create()
     {
-        //
+        $staff = auth()->user()->staff;
+        if (!$staff) {
+            return back()->with('error', 'Staff profile not found.');
+        }
+
+        $locations = \App\Models\BackupLocation::all();
+        $todayBackup = SystemBackup::where('staff_id', $staff->id)
+            ->whereDate('backup_date', today())
+            ->first();
+
+        return view('Staff.StaffBackupCreate', compact('locations', 'todayBackup'));
     }
 
     /**
@@ -28,7 +52,26 @@ class SystemBackupController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $staff = auth()->user()->staff;
+        if (!$staff) {
+            return back()->with('error', 'Staff profile not found.');
+        }
+
+        $data = $request->validate([
+            'status' => 'required|in:YES,NO',
+            'location' => 'nullable|required_if:status,YES|string',
+            'remark' => 'nullable|string',
+        ]);
+
+        $data['staff_id'] = $staff->id;
+        $data['backup_date'] = today();
+
+        SystemBackup::updateOrCreate(
+            ['staff_id' => $staff->id, 'backup_date' => today()],
+            $data
+        );
+
+        return redirect()->route('staff.daily-backup.index')->with('success', 'Daily backup status submitted successfully.');
     }
 
     /**

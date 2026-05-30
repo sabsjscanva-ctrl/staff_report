@@ -9,127 +9,159 @@ use App\Models\SystemBackup;
 
 class ITManagementController extends Controller
 {
-    public function allotmentIndex()
+    public function backupLocationsIndex()
     {
-        $staffs = StaffModel::with(['department', 'systemAllotment', 'stockAllotments.item'])->where('status', 'Active')->get();
-        return view('ITManagement.allotment', compact('staffs'));
+        $locations = \App\Models\BackupLocation::all();
+        return view('ITManagement.backup-locations', compact('locations'));
     }
 
-    public function allotmentStore(Request $request)
+    public function backupLocationsStore(Request $request)
     {
-        $data = $request->validate([
-            'staff_id' => 'required|exists:staff_details,id',
-            'type' => 'nullable|string',
-            'processor' => 'nullable|string',
-            'ram' => 'nullable|string',
-            'storage' => 'nullable|string',
-            'motherboard' => 'nullable|string',
-            'graphic_card' => 'nullable|string',
-
-            'operating_system' => 'nullable|string',
-            'licensed_software' => 'nullable|string',
-            'antivirus' => 'nullable|string',
-            'installed_applications' => 'nullable|string',
-            'ip_address' => 'nullable|string',
-            'remarks' => 'nullable|string',
+        $request->validate([
+            'name' => 'required|string|unique:backup_locations,name|max:255',
         ]);
 
-        $allotment = SystemAllotment::updateOrCreate(
-            ['staff_id' => $data['staff_id']],
-            $data
-        );
-
-        return back()->with('success', 'System Allotment updated successfully.');
-    }
-
-    public function backupIndex(Request $request)
-    {
-        $offices = \App\Models\Office\OfficeModel::all();
-        
-        $query = StaffModel::with(['department', 'systemBackups' => function($q) use ($request) {
-            if ($request->specific_date) {
-                $q->where('backup_date', $request->specific_date);
-            }
-            $q->orderBy('backup_date', 'desc');
-        }])->where('status', 'Active');
-
-        if ($request->office_id) {
-            $query->where('office_id', $request->office_id);
-        }
-
-        $staffs = $query->orderByRaw('CASE WHEN backup_sequence IS NULL THEN 9999 ELSE backup_sequence END')
-                        ->orderBy('name')
-                        ->get();
-
-        return view('ITManagement.backup', compact('staffs', 'offices'));
-    }
-
-    public function backupStore(Request $request)
-    {
-        // Handle Staff Sequencing with Smart Reshuffle
-        if ($request->has('sequences')) {
-            foreach ($request->sequences as $staffId => $newSeq) {
-                if ($newSeq === null || $newSeq === '') continue;
-                
-                $staff = StaffModel::find($staffId);
-                $oldSeq = $staff->backup_sequence;
-                
-                if ($oldSeq != $newSeq) {
-                    if ($oldSeq === null) {
-                        // Brand new sequence: Shift everything from newSeq onwards up
-                        StaffModel::where('id', '!=', $staffId)
-                            ->where('backup_sequence', '>=', $newSeq)
-                            ->increment('backup_sequence');
-                    } elseif ($newSeq < $oldSeq) {
-                        // Moving UP (e.g., 6 to 3): Everything from 3 to 5 shifts UP (+1)
-                        StaffModel::where('id', '!=', $staffId)
-                            ->where('backup_sequence', '>=', $newSeq)
-                            ->where('backup_sequence', '<', $oldSeq)
-                            ->increment('backup_sequence');
-                    } else {
-                        // Moving DOWN (e.g., 3 to 6): Everything from 4 to 6 shifts DOWN (-1)
-                        StaffModel::where('id', '!=', $staffId)
-                            ->where('backup_sequence', '>', $oldSeq)
-                            ->where('backup_sequence', '<=', $newSeq)
-                            ->decrement('backup_sequence');
-                    }
-                    $staff->update(['backup_sequence' => $newSeq]);
-                }
-            }
-        }
-
-        // Handle Bulk Backups
-        if ($request->has('backups')) {
-            $count = 0;
-            foreach ($request->backups as $staffId => $dates) {
-                foreach ($dates as $date => $details) {
-                    // Only process if status is set (YES, NO, NA, etc)
-                    if (!empty($details['status'])) {
-                        SystemBackup::updateOrCreate(
-                            ['staff_id' => $staffId, 'backup_date' => $date],
-                            [
-                                'status' => $details['status'],
-                                'location' => $details['location'] ?? null,
-                                'remark' => $details['remark'] ?? null,
-                            ]
-                        );
-                        $count++;
-                    }
-                }
-            }
-            return back()->with('success', "Updated $count backup records and staff sequences.");
-        }
-
-        $data = $request->validate([
-            'staff_id' => 'required|exists:staff_details,id',
-            'status' => 'nullable|string',
-            'location' => 'nullable|string',
-            'remark' => 'nullable|string',
-            'backup_date' => 'nullable|date',
+        \App\Models\BackupLocation::create([
+            'name' => strtoupper($request->name),
         ]);
 
-        SystemBackup::create($data);
+        return back()->with('success', 'Backup Location added successfully.');
+    }
 
-        return back()->with('success', 'Backup info added successfully.');
+    public function backupLocationsDestroy($id)
+    {
+        $location = \App\Models\BackupLocation::findOrFail($id);
+        $location->delete();
+
+        return back()->with('success', 'Backup Location deleted successfully.');
+    }
+
+    public function backupReportsIndex(Request $request)
+    {
+        $staffs = StaffModel::where('status', 'Active')->orderBy('name')->get();
+        $query = $this->buildBackupReportQuery($request);
+        $backups = $query->paginate(20);
+
+        return view('ITManagement.backup-reports', compact('staffs', 'backups'));
+    }
+
+    public function backupReportsExportPdf(Request $request)
+    {
+        $query = $this->buildBackupReportQuery($request);
+        $backups = $query->get();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.backup-report-pdf', compact('backups'));
+        return $pdf->download('backup-reports-' . date('Y-m-d') . '.pdf');
+    }
+
+    public function backupReportsExportExcel(Request $request)
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\BackupReportExport($request), 'backup-reports-' . date('Y-m-d') . '.xlsx');
+    }
+
+    private function buildBackupReportQuery(Request $request)
+    {
+        $query = SystemBackup::with('staff')
+            ->join('staff_details', 'system_backups.staff_id', '=', 'staff_details.id')
+            ->select('system_backups.*')
+            ->orderBy('system_backups.backup_date', 'desc')
+            ->orderBy('staff_details.name', 'asc');
+
+        if ($request->filled('staff_id')) {
+            $query->where('system_backups.staff_id', $request->staff_id);
+        }
+
+        if ($request->filter_type == 'month') {
+            if ($request->filled('month')) {
+                $query->whereMonth('system_backups.backup_date', $request->month);
+            }
+            if ($request->filled('year')) {
+                $query->whereYear('system_backups.backup_date', $request->year);
+            }
+        } elseif ($request->filter_type == 'date_range') {
+            if ($request->filled('start_date')) {
+                $query->where('system_backups.backup_date', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->where('system_backups.backup_date', '<=', $request->end_date);
+            }
+        }
+
+        return $query;
+    }
+
+    public function defaultersIndex()
+    {
+        $defaulters = $this->getDefaultersData();
+        return view('ITManagement.backup-defaulters', compact('defaulters'));
+    }
+
+    public function defaultersExportPdf()
+    {
+        $defaulters = $this->getDefaultersData();
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.defaulters-pdf', compact('defaulters'));
+        return $pdf->download('backup-defaulters-' . date('Y-m-d') . '.pdf');
+    }
+
+    public function defaultersExportExcel()
+    {
+        $defaulters = $this->getDefaultersData();
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\DefaultersExport($defaulters), 'backup-defaulters-' . date('Y-m-d') . '.xlsx');
+    }
+
+    private function getDefaultersData()
+    {
+        $activeStaffs = StaffModel::where('status', 'Active')->get();
+        $defaulters = collect();
+
+        foreach ($activeStaffs as $staff) {
+            $consecutiveMissed = 0;
+            $dateCursor = today();
+            
+            // Calculate consecutive missed days backwards
+            while (true) {
+                // If it's Sunday, skip it
+                if ($dateCursor->isSunday()) {
+                    $dateCursor->subDay();
+                    continue;
+                }
+
+                $backup = SystemBackup::where('staff_id', $staff->id)
+                                      ->whereDate('backup_date', $dateCursor->toDateString())
+                                      ->first();
+
+                // Stop counting consecutive missed days if we hit a YES
+                if ($backup && $backup->status == 'YES') {
+                    break;
+                }
+
+                $consecutiveMissed++;
+                $dateCursor->subDay();
+                
+                // Prevent infinite loops (limit lookback to max 30 days)
+                if ($consecutiveMissed > 30) {
+                    break;
+                }
+            }
+
+            // If missed 3 or more consecutive working days
+            if ($consecutiveMissed >= 3) {
+                // Find recent YES backups
+                $recentBackups = SystemBackup::where('staff_id', $staff->id)
+                                             ->where('status', 'YES')
+                                             ->orderBy('backup_date', 'desc')
+                                             ->take(3)
+                                             ->pluck('backup_date');
+                                             
+                $defaulters->push([
+                    'staff' => $staff,
+                    'consecutive_missed' => $consecutiveMissed,
+                    'recent_backups' => $recentBackups
+                ]);
+            }
+        }
+
+        // Sort by most missed days first
+        return $defaulters->sortByDesc('consecutive_missed')->values();
     }
 }
