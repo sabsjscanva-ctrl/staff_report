@@ -147,7 +147,10 @@ class DailyReportController extends Controller
                     ->from('daily_report_tasks as t2')
                     ->whereColumn('t2.source_task_id', 'daily_report_tasks.id');
             })
-            ->get();
+            ->get()->map(function($task) {
+                $task->description = null; // Clear old logs
+                return $task;
+            });
 
         if ($lastReport) {
             $lastReport->setRelation('tasks', $incompleteTasks);
@@ -169,7 +172,7 @@ class DailyReportController extends Controller
             'comments'     => 'nullable|string',
             'tasks'                => 'nullable|array',
             'tasks.*.task_title'  => 'required_with:tasks.*|string|max:255',
-            'tasks.*.description' => 'required_with:tasks.*|string',
+            'tasks.*.description' => 'nullable|string',
             'tasks.*.status'      => 'required_with:tasks.*|in:completed,in_progress,pending,paused',
             'tasks.*.time_spend'  => 'nullable|string|max:100',
             'tasks.*.start_time'  => 'nullable|string',
@@ -297,7 +300,7 @@ class DailyReportController extends Controller
             'comments'     => 'nullable|string',
             'tasks'                => 'nullable|array',
             'tasks.*.task_title'  => 'required_with:tasks.*|string|max:255',
-            'tasks.*.description' => 'required_with:tasks.*|string',
+            'tasks.*.description' => 'nullable|string',
             'tasks.*.status'      => 'required_with:tasks.*|in:completed,in_progress,pending,paused',
             'tasks.*.time_spend'  => 'nullable|string|max:100',
             'tasks.*.start_time'  => 'nullable|string',
@@ -404,7 +407,10 @@ class DailyReportController extends Controller
                     ->from('daily_report_tasks as t2')
                     ->whereColumn('t2.source_task_id', 'daily_report_tasks.id');
             })
-            ->get();
+            ->get()->map(function($task) {
+                $task->description = null; // Clear old logs
+                return $task;
+            });
 
         return response()->json([
             'success' => true,

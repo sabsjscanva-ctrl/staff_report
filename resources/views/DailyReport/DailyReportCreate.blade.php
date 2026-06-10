@@ -290,12 +290,11 @@
 
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Description <span class="text-red-500">*</span>
+                        Description
                     </label>
                     <textarea name="tasks[${index}][description]" rows="2"
-                               ${isCarry ? 'readonly' : ''}
                                placeholder="Describe what you did..."
-                               class="task-desc-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm ${isCarry ? 'bg-gray-100/50 cursor-not-allowed text-gray-600' : 'bg-white'}
+                               class="task-desc-input w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
                                       focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition resize-none">${escHtml(data.description || '')}</textarea>
                     <p class="err-task-desc text-red-500 text-[10px] mt-1 hidden font-semibold uppercase tracking-tight">Required</p>
                 </div>
@@ -419,13 +418,8 @@
                 errTitle.classList.add('hidden');
             }
 
-            const descInput = row.querySelector('.task-desc-input');
             const errDesc   = row.querySelector('.err-task-desc');
-            if (!descInput.value.trim()) {
-                errDesc.classList.remove('hidden'); ok = false;
-            } else {
-                errDesc.classList.add('hidden');
-            }
+            errDesc.classList.add('hidden');
 
             const startInput = row.querySelector('.task-start-time-input');
             const endInput = row.querySelector('.task-end-time-input');
