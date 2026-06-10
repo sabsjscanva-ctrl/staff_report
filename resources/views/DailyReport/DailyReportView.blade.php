@@ -108,15 +108,15 @@
 
 {{-- Filters Bar --}}
 <div class="card-premium mb-8 overflow-visible">
-    <form action="{{ route('daily-report.export') }}" method="GET" id="export-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+    <form action="{{ route('daily-report.index') }}" method="GET" id="export-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         @if(Auth::user()->role !== 'staff')
         <div class="space-y-2">
             <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Office / Branch</label>
             <div class="relative">
-                <select id="office-filter" onchange="filterStaffByOffice()" class="form-input-modern appearance-none pr-10">
+                <select name="office_id" id="office-filter" onchange="filterStaffByOffice()" class="form-input-modern appearance-none pr-10">
                     <option value="">All Offices</option>
                     @foreach($offices as $o)
-                        <option value="{{ $o->id }}">{{ $o->name }}</option>
+                        <option value="{{ $o->id }}" {{ request('office_id') == $o->id ? 'selected' : '' }}>{{ $o->name }}</option>
                     @endforeach
                 </select>
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -133,7 +133,7 @@
                 <select name="staff_id" id="staff-filter" onchange="applyFilters()" class="form-input-modern appearance-none pr-10">
                     <option value="">All Personnel</option>
                     @foreach($allStaff as $s)
-                        <option value="{{ $s->id }}" data-office="{{ $s->staff->office_id ?? '' }}" data-name="{{ strtolower($s->name) }}">{{ $s->name }}</option>
+                        <option value="{{ $s->id }}" {{ request('staff_id') == $s->id ? 'selected' : '' }} data-office="{{ $s->staff->office_id ?? '' }}" data-name="{{ strtolower($s->name) }}">{{ $s->name }}</option>
                     @endforeach
                 </select>
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -147,12 +147,12 @@
 
         <div class="space-y-2">
             <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
-            <input type="date" name="start_date" id="start-date" onchange="applyFilters()" class="form-input-modern">
+            <input type="date" name="start_date" id="start-date" value="{{ request('start_date') }}" onchange="applyFilters()" class="form-input-modern">
         </div>
 
         <div class="space-y-2">
             <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">End Date</label>
-            <input type="date" name="end_date" id="end-date" onchange="applyFilters()" class="form-input-modern">
+            <input type="date" name="end_date" id="end-date" value="{{ request('end_date') }}" onchange="applyFilters()" class="form-input-modern">
         </div>
 
         <div class="lg:col-span-2 flex items-end gap-3">
@@ -169,7 +169,7 @@
                     Export
                 </button>
                 <div class="absolute right-0 bottom-full mb-3 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2">
-                    <button type="submit" name="type" value="excel" class="w-full px-5 py-4 text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-3 transition">
+                    <button type="submit" onclick="document.getElementById('export-form').action='{{ route('daily-report.export') }}'" name="type" value="excel" class="w-full px-5 py-4 text-left text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-3 transition">
                         <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -177,7 +177,7 @@
                         </div>
                         Excel Sheet
                     </button>
-                    <button type="submit" name="type" value="pdf" class="w-full px-5 py-4 text-left text-sm text-slate-700 hover:bg-rose-50 hover:text-rose-700 flex items-center gap-3 transition border-t border-slate-50">
+                    <button type="submit" onclick="document.getElementById('export-form').action='{{ route('daily-report.export') }}'" name="type" value="pdf" class="w-full px-5 py-4 text-left text-sm text-slate-700 hover:bg-rose-50 hover:text-rose-700 flex items-center gap-3 transition border-t border-slate-50">
                         <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
@@ -673,88 +673,9 @@
 
     // ── Filters ────────────────────────────────────────────
     function applyFilters() {
-        const staffId = document.getElementById('staff-filter')?.value;
-        const start   = document.getElementById('start-date').value;
-        const end     = document.getElementById('end-date').value;
-        const dateGroups = document.querySelectorAll('.date-group');
-        let totalVisibleTasks = 0;
-
-        dateGroups.forEach(group => {
-            const gDate = group.dataset.date;
-            
-            // Check date match
-            let dateMatch = true;
-            if (start && gDate < start) dateMatch = false;
-            if (end && gDate > end) dateMatch = false;
-
-            if (!dateMatch) {
-                group.style.display = 'none';
-                return;
-            }
-
-            // Filter tasks inside this date group
-            const tasks = group.querySelectorAll('.task-row');
-            const staffHeaders = group.querySelectorAll('.group-staff-row');
-            if (staffHeaders.length) staffHeaders.forEach(sh => sh.style.display = 'none');
-            
-            let visibleTasksInGroup = 0;
-            let groupMinutes = 0;
-
-            tasks.forEach(task => {
-                const sidMatch = !staffId || task.dataset.staffId === staffId;
-                if (sidMatch) {
-                    task.style.display = '';
-                    visibleTasksInGroup++;
-                    
-                    const ts = task.dataset.timeSpend || '';
-                    let m = 0;
-                    let match;
-                    if (match = ts.match(/(\d+)\s*h/)) m += parseInt(match[1]) * 60;
-                    if (match = ts.match(/(\d+)\s*m/)) m += parseInt(match[1]);
-                    if (match = ts.match(/(\d+):(\d+)/)) m += parseInt(match[1]) * 60 + parseInt(match[2]);
-                    groupMinutes += m;
-                    
-                    const sh = group.querySelector(`.group-staff-row[data-staff-id="${task.dataset.staffId}"]`);
-                    if (sh) sh.style.display = '';
-                } else {
-                    task.style.display = 'none';
-                }
-            });
-
-            if (visibleTasksInGroup > 0) {
-                group.style.display = '';
-                // Update badge count for visible tasks in this group
-                const groupCountBadge = group.querySelector('.group-task-count');
-                if (groupCountBadge) {
-                    groupCountBadge.textContent = visibleTasksInGroup + (visibleTasksInGroup === 1 ? ' task' : ' tasks');
-                }
-                
-                const groupTimeContainer = group.querySelector('.group-task-time-container');
-                const groupTimeText = group.querySelector('.group-task-time-text');
-                if (groupTimeContainer && groupTimeText) {
-                    if (groupMinutes > 0) {
-                        const dh = Math.floor(groupMinutes / 60);
-                        const dm = groupMinutes % 60;
-                        groupTimeText.textContent = (dh > 0 ? dh + 'h ' : '') + (dm > 0 ? dm + 'm' : '');
-                        groupTimeContainer.style.display = 'flex';
-                    } else {
-                        groupTimeContainer.style.display = 'none';
-                    }
-                }
-                
-                totalVisibleTasks += visibleTasksInGroup;
-            } else {
-                group.style.display = 'none';
-            }
-        });
-
-        const noRes = document.getElementById('no-results');
-        const cnt   = document.getElementById('visible-count');
-        if (noRes) noRes.classList.toggle('hidden', totalVisibleTasks > 0);
-        if (cnt) cnt.textContent = totalVisibleTasks;
-        
-        const rc = document.getElementById('result-count');
-        if (rc) rc.textContent = totalVisibleTasks + ' task' + (totalVisibleTasks !== 1 ? 's' : '');
+        const form = document.getElementById('export-form');
+        form.action = "{{ route('daily-report.index') }}";
+        form.submit();
     }
 
     function setQuickRange(type) {
@@ -777,19 +698,19 @@
     }
 
     function clearFilters() {
+        const form = document.getElementById('export-form');
         const sf = document.getElementById('staff-filter');
         const of = document.getElementById('office-filter');
-        if (of) {
-            of.value = '';
-            filterStaffByOffice(); // Reset staff options
-        }
+        if (of) of.value = '';
         if (sf) sf.value = '';
-        document.getElementById('start-date').value  = '';
-        document.getElementById('end-date').value  = '';
-        applyFilters();
+        document.getElementById('start-date').value = '';
+        document.getElementById('end-date').value = '';
+        
+        form.action = "{{ route('daily-report.index') }}";
+        form.submit();
     }
 
-    function filterStaffByOffice() {
+    function filterStaffByOffice(shouldSubmit = true) {
         const officeId = document.getElementById('office-filter').value;
         const staffSelect = document.getElementById('staff-filter');
         if (!staffSelect) return;
@@ -813,12 +734,14 @@
             staffSelect.value = "";
         }
         
-        applyFilters();
+        if (shouldSubmit) {
+            applyFilters();
+        }
     }
 
     // Run on load in case the browser pre-fills the office dropdown
     document.addEventListener('DOMContentLoaded', () => {
-        if(document.getElementById('office-filter')) filterStaffByOffice();
+        if(document.getElementById('office-filter')) filterStaffByOffice(false);
     });
 
     // Comments Logic

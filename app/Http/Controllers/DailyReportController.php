@@ -31,9 +31,25 @@ class DailyReportController extends Controller
         // Staff sirf apni khud ki reports dekh sakta hai
         if (Auth::user()->role === 'staff') {
             $query->where('staff_id', Auth::id());
+        } else {
+            if (request()->filled('staff_id')) {
+                $query->where('staff_id', request('staff_id'));
+            }
+            if (request()->filled('office_id')) {
+                $query->whereHas('staff.staff', function ($q) {
+                    $q->where('office_id', request('office_id'));
+                });
+            }
         }
 
-        $reports = $query->paginate(5);
+        if (request()->filled('start_date')) {
+            $query->whereDate('report_date', '>=', request('start_date'));
+        }
+        if (request()->filled('end_date')) {
+            $query->whereDate('report_date', '<=', request('end_date'));
+        }
+
+        $reports = $query->paginate(5)->withQueryString();
 
         // Statistics for dashboard
         $statsQuery = DailyReport::query();
