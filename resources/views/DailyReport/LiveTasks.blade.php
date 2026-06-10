@@ -297,7 +297,20 @@
                                                 </div>
 
                                                 @if($task->description)
-                                                    <p class="text-[11px] text-slate-400 mt-1 break-words leading-relaxed whitespace-pre-wrap">{{ $task->description }}</p>
+                                                    @php
+                                                        $descLines = explode("\n", $task->description);
+                                                        $todayStr = '[' . now()->format('d M');
+                                                        $filteredDesc = implode("\n", array_filter($descLines, function($line) use ($todayStr) {
+                                                            $line = trim($line);
+                                                            if (preg_match('/^\[\d{2} [A-Za-z]{3}, \d{2}:\d{2} [A-Z]{2}\]/', $line)) {
+                                                                return str_starts_with($line, $todayStr);
+                                                            }
+                                                            return true;
+                                                        }));
+                                                    @endphp
+                                                    @if(trim($filteredDesc))
+                                                        <p class="text-[11px] text-slate-400 mt-1 break-words leading-relaxed whitespace-pre-wrap">{{ trim($filteredDesc) }}</p>
+                                                    @endif
                                                 @endif
 
                                                 <!-- Soft metadata duration labels -->
