@@ -845,6 +845,18 @@ class DailyReportController extends Controller
             });
         }
 
+        $staffListForDropdown = (clone $query)->orderBy('name', 'asc')->get();
+
+        if (request()->filled('office_id')) {
+            $query->whereHas('staff', function($q) {
+                $q->where('office_id', request('office_id'));
+            });
+        }
+
+        if (request()->filled('staff_id')) {
+            $query->where('id', request('staff_id'));
+        }
+
         // To calculate overall stats:
         $allStaffIds = (clone $query)->pluck('id');
         $totalStaffCount = $allStaffIds->count();
@@ -876,7 +888,29 @@ class DailyReportController extends Controller
         }
         $idleCount = $totalStaffCount - ($liveCount + $pausedCount + $completedStaffCount);
 
-        $staffListForDropdown = (clone $query)->orderBy('name', 'asc')->get();
+        if (request()->filled('status')) {
+            $statusFilter = request('status');
+            $filteredStaffIds = [];
+            foreach ($allStaffIds as $staffId) {
+                $tasks = $todayTasks->get($staffId) ?? collect();
+                $isLive = $tasks->where('status', 'in_progress')->isNotEmpty();
+                $hasPaused = $tasks->where('status', 'paused')->isNotEmpty();
+                $workedToday = $tasks->where('status', 'completed')->isNotEmpty();
+
+                $staffStatus = 'idle';
+                if ($isLive) $staffStatus = 'live';
+                elseif ($hasPaused) $staffStatus = 'paused';
+                elseif ($workedToday) $staffStatus = 'completed';
+
+                if ($statusFilter === 'all' || $staffStatus === $statusFilter) {
+                    $filteredStaffIds[] = $staffId;
+                }
+            }
+            if ($statusFilter !== 'all') {
+                $query->whereIn('id', $filteredStaffIds);
+            }
+        }
+
         $allStaff = $query->orderBy('name', 'asc')->paginate(5);
 
         return view('DailyReport.LiveTasks', compact('allStaff', 'staffListForDropdown', 'todayTasks', 'totalStaffCount', 'liveCount', 'pausedCount', 'idleCount'));

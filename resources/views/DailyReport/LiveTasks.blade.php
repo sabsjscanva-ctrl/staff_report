@@ -23,7 +23,7 @@
             <select id="staffSearch" class="block w-full pl-10 pr-10 py-2 border border-slate-200/80 rounded-2xl bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-400 text-sm shadow-xs transition appearance-none cursor-pointer">
                 <option value="" data-office="">All Staff Members</option>
                 @foreach($staffListForDropdown as $staff)
-                    <option value="{{ strtolower($staff->name) }}" data-office="{{ $staff->staff?->office_id }}">{{ $staff->name }}</option>
+                    <option value="{{ $staff->id }}" data-office="{{ $staff->staff?->office_id }}" {{ request('staff_id') == $staff->id ? 'selected' : '' }}>{{ $staff->name }}</option>
                 @endforeach
             </select>
             <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none z-10">
@@ -47,7 +47,7 @@
                 <select id="officeFilter" class="block w-full pl-10 pr-10 py-2 border border-slate-200/80 rounded-2xl bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-400 text-sm shadow-xs transition appearance-none cursor-pointer">
                     <option value="">All Offices</option>
                     @foreach($offices as $office)
-                        <option value="{{ $office->id }}">{{ $office->name }}</option>
+                        <option value="{{ $office->id }}" {{ request('office_id') == $office->id ? 'selected' : '' }}>{{ $office->name }}</option>
                     @endforeach
                 </select>
                 <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none z-10">
@@ -75,7 +75,7 @@
 
 <!-- Soft-Tone Header Stats Cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300">
+    <div onclick="filterByStatus('all')" class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300 cursor-pointer {{ request('status', 'all') === 'all' ? 'ring-2 ring-indigo-500 bg-indigo-50/10' : '' }}">
         <div class="w-12 h-12 rounded-2xl bg-indigo-50/60 flex items-center justify-center flex-shrink-0">
             <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A9.642 9.642 0 0012 21a9.647 9.647 0 00-3-1.765V19.13M6 16.5a4.125 4.125 0 017.533-2.493M6 16.5a8.959 8.959 0 01-2.625.372c-1.378 0-2.67-.305-3.83-.852a4.125 4.125 0 017.533-2.493M3 9.071a3 3 0 113-3 3 3 0 01-3 3zm18 0a3 3 0 113-3 3 3 0 01-3 3zm-9 3a4 4 0 110-8 4 4 0 010 8z" />
@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300">
+    <div onclick="filterByStatus('live')" class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300 cursor-pointer {{ request('status') === 'live' ? 'ring-2 ring-emerald-500 bg-emerald-50/10' : '' }}">
         <div class="w-12 h-12 rounded-2xl bg-emerald-50/60 flex items-center justify-center flex-shrink-0 relative">
             <span class="absolute top-2.5 right-2.5 flex h-2 w-2">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -103,7 +103,7 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300">
+    <div onclick="filterByStatus('paused')" class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300 cursor-pointer {{ request('status') === 'paused' ? 'ring-2 ring-amber-500 bg-amber-50/10' : '' }}">
         <div class="w-12 h-12 rounded-2xl bg-amber-50/60 flex items-center justify-center flex-shrink-0">
             <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9v6m-4.5-6v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -115,7 +115,7 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300">
+    <div onclick="filterByStatus('idle')" class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100 flex items-center gap-5 hover:shadow-sm transition duration-300 cursor-pointer {{ request('status') === 'idle' ? 'ring-2 ring-slate-400 bg-slate-50' : '' }}">
         <div class="w-12 h-12 rounded-2xl bg-slate-50/60 flex items-center justify-center flex-shrink-0">
             <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -557,80 +557,53 @@
         const staffRows = document.querySelectorAll('.staff-row');
 
         function applyFilters() {
-            const selectedStaffName = staffSelect ? staffSelect.value.trim().toLowerCase() : '';
+            const selectedStaffId = staffSelect ? staffSelect.value.trim() : '';
             const selectedOfficeId = officeSelect ? officeSelect.value.trim() : '';
-            let visibleCount = 0;
 
-            let countTotal = 0;
-            let countLive = 0;
-            let countPaused = 0;
-            let countIdle = 0;
-
-            staffRows.forEach(row => {
-                const staffName = row.getAttribute('data-name') || '';
-                const officeId = row.getAttribute('data-office') || '';
-                const rowStatus = row.getAttribute('data-status') || 'idle';
-
-                const matchesStaff = !selectedStaffName || staffName === selectedStaffName;
-                const matchesOffice = !selectedOfficeId || officeId === selectedOfficeId;
-
-                if (matchesStaff && matchesOffice) {
-                    row.style.display = '';
-                    visibleCount++;
-                    
-                    countTotal++;
-                    if (rowStatus === 'live') countLive++;
-                    else if (rowStatus === 'paused') countPaused++;
-                    else if (rowStatus === 'idle') countIdle++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            // Update Header Stats
-            const statTotalStaff = document.getElementById('statTotalStaff');
-            const statLive = document.getElementById('statLive');
-            const statPaused = document.getElementById('statPaused');
-            const statIdle = document.getElementById('statIdle');
-
-            if (statTotalStaff) statTotalStaff.textContent = countTotal;
-            if (statLive) statLive.textContent = countLive;
-            if (statPaused) statPaused.textContent = countPaused;
-            if (statIdle) statIdle.textContent = countIdle;
-
-            // Handle "No results found" row
-            const noResultsRow = document.getElementById('noResultsRow');
-            if (noResultsRow) {
-                if (visibleCount === 0 && staffRows.length > 0) {
-                    noResultsRow.classList.remove('hidden');
-                } else {
-                    noResultsRow.classList.add('hidden');
-                }
+            const url = new URL(window.location.href);
+            
+            if (selectedStaffId) {
+                url.searchParams.set('staff_id', selectedStaffId);
+            } else {
+                url.searchParams.delete('staff_id');
+            }
+            
+            if (selectedOfficeId) {
+                url.searchParams.set('office_id', selectedOfficeId);
+            } else {
+                url.searchParams.delete('office_id');
             }
 
-            // Update Staff Dropdown options to match Office
-            if (staffSelect && officeSelect) {
-                let currentStaffHidden = false;
+            url.searchParams.delete('page'); // Reset to first page
+            window.location.href = url.toString();
+        }
+
+        window.filterByStatus = function(status) {
+            const url = new URL(window.location.href);
+            if (status === 'all') {
+                url.searchParams.delete('status');
+            } else {
+                url.searchParams.set('status', status);
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        };
+
+        // Initialize office/staff logic on load if office is selected
+        if (officeSelect && officeSelect.value) {
+            const selectedOfficeId = officeSelect.value;
+            if (staffSelect) {
                 Array.from(staffSelect.options).forEach(opt => {
-                    if (opt.value === '') return; // keep "All Staff" always visible
+                    if (opt.value === '') return;
                     const optOfficeId = opt.getAttribute('data-office');
                     if (selectedOfficeId && optOfficeId !== selectedOfficeId) {
                         opt.style.display = 'none';
                         opt.disabled = true;
-                        if (staffSelect.value === opt.value) {
-                            currentStaffHidden = true;
-                        }
                     } else {
                         opt.style.display = '';
                         opt.disabled = false;
                     }
                 });
-
-                if (currentStaffHidden) {
-                    staffSelect.value = '';
-                    // Need to re-trigger applyFilters to show all staff of this office
-                    setTimeout(applyFilters, 0);
-                }
             }
         }
 
