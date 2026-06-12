@@ -28,6 +28,24 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
+    
+    Route::post('/logout-all-staff', function () {
+        $staffIds = \App\Models\User::where('role', 'staff')->pluck('id');
+        
+        if (config('session.driver') === 'database') {
+            \Illuminate\Support\Facades\DB::table('sessions')->whereIn('user_id', $staffIds)->delete();
+            return back()->with('success', 'Sabhi staff members logout ho gaye hain.');
+        } else {
+            // Agar abhi tak database session active nahi hai toh poori session directory clear karni padegi
+            $files = glob(storage_path('framework/sessions/*'));
+            foreach($files as $file){
+                if(is_file($file) && basename($file) !== '.gitignore') {
+                    unlink($file);
+                }
+            }
+            return redirect()->route('login')->with('success', 'Sabhi sessions clear kar diye gaye hain (Admin bhi logout ho gaya).');
+        }
+    })->name('logout-all-staff');
 });
 
 // Manager routes
