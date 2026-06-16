@@ -126,6 +126,8 @@ Route::middleware(['auth', 'role:IT DEPARTMENT'])->prefix('stock-management')->n
     Route::post('/categories', [\App\Http\Controllers\StockManagementController::class, 'categoryStore'])->name('categories.store');
     
     Route::get('/items', [\App\Http\Controllers\StockManagementController::class, 'itemIndex'])->name('items.index');
+    Route::get('/items/export/pdf', [\App\Http\Controllers\StockManagementController::class, 'itemExportPdf'])->name('items.export-pdf');
+    Route::get('/items/export/excel', [\App\Http\Controllers\StockManagementController::class, 'itemExportExcel'])->name('items.export-excel');
     Route::post('/items', [\App\Http\Controllers\StockManagementController::class, 'itemStore'])->name('items.store');
     Route::put('/items/{id}', [\App\Http\Controllers\StockManagementController::class, 'itemUpdate'])->name('items.update');
     Route::delete('/items/{id}', [\App\Http\Controllers\StockManagementController::class, 'itemDestroy'])->name('items.destroy');

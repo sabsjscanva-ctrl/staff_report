@@ -125,6 +125,20 @@ class StockManagementController extends Controller
         return view('StockManagement.items', compact('categories', 'items'));
     }
 
+    public function itemExportPdf()
+    {
+        $categories = StockCategory::all();
+        $items = StockItem::with(['category', 'brands'])->get();
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('StockManagement.exports.items-pdf', compact('categories', 'items'));
+        return $pdf->download('overall_stock_report_' . date('Y-m-d') . '.pdf');
+    }
+
+    public function itemExportExcel()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\StockItemExport, 'overall_stock_report_' . date('Y-m-d') . '.xlsx');
+    }
+
     public function itemStore(Request $request)
     {
         $request->validate([
