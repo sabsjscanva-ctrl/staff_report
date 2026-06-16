@@ -204,7 +204,11 @@
                             </a>
                             <a href="{{ route('stock-management.allotments.index') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Stock Allotment
+                                Allot Stock
+                            </a>
+                            <a href="{{ route('stock-management.allotments.history') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                                Allotment History
                             </a>
                         </div>
                     </div>
@@ -404,7 +408,9 @@
                     <a href="{{ route('it-management.backup-locations.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Backup Locations</a>
                     <a href="{{ route('it-management.backup-reports.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Generate Reports</a>
                     <a href="{{ route('it-management.backup-defaulters.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Defaulters List</a>
-                    <a href="{{ route('stock-management.items.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Stock Management</a>
+                    <a href="{{ route('stock-management.items.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Manage Stock Items</a>
+                    <a href="{{ route('stock-management.allotments.index') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Allot Stock</a>
+                    <a href="{{ route('stock-management.allotments.history') }}" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-600 transition">Allotment History</a>
                 @endif
 
                 <div class="text-xs font-semibold text-indigo-300 uppercase tracking-wider px-3 py-2">Daily Work</div>

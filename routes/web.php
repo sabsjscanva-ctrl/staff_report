@@ -136,9 +136,15 @@ Route::middleware(['auth', 'role:IT DEPARTMENT'])->prefix('stock-management')->n
     
     Route::get('/purchases', [\App\Http\Controllers\StockManagementController::class, 'purchaseIndex'])->name('purchases.index');
     Route::post('/purchases', [\App\Http\Controllers\StockManagementController::class, 'purchaseStore'])->name('purchases.store');
+    Route::put('/purchases/{id}', [\App\Http\Controllers\StockManagementController::class, 'purchaseUpdate'])->name('purchases.update');
+    Route::delete('/purchases/{id}', [\App\Http\Controllers\StockManagementController::class, 'purchaseDestroy'])->name('purchases.destroy');
     
     Route::get('/allotments', [\App\Http\Controllers\StockManagementController::class, 'allotmentIndex'])->name('allotments.index');
     Route::post('/allotments', [\App\Http\Controllers\StockManagementController::class, 'allotmentStore'])->name('allotments.store');
+    Route::get('/allotments/history', [\App\Http\Controllers\StockManagementController::class, 'allotmentHistoryIndex'])->name('allotments.history');
+    Route::post('/allotments/{id}/return', [\App\Http\Controllers\StockManagementController::class, 'allotmentReturn'])->name('allotments.return');
+    Route::put('/allotments/{id}', [\App\Http\Controllers\StockManagementController::class, 'allotmentUpdate'])->name('allotments.update');
+    Route::delete('/allotments/{id}', [\App\Http\Controllers\StockManagementController::class, 'allotmentDestroy'])->name('allotments.destroy');
 });
 
 // Daily Report (All authenticated users)

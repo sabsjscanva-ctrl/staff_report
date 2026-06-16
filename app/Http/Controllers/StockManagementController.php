@@ -41,6 +41,58 @@ class StockManagementController extends Controller
 
         return back()->with('success', 'New purchase recorded and stock updated');
     }
+
+    public function purchaseUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'quantity' => 'required|integer|min:1',
+            'purchase_date' => 'required|date',
+            'vendor_name' => 'nullable|string',
+            'invoice_no' => 'nullable|string',
+            'amount' => 'nullable|numeric',
+            'remark' => 'nullable|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $id) {
+                $purchase = StockPurchase::findOrFail($id);
+                $brand = StockItemBrand::lockForUpdate()->findOrFail($purchase->brand_id);
+                
+                $difference = $request->quantity - $purchase->quantity;
+                if ($difference != 0) {
+                    if ($difference < 0 && $brand->quantity < abs($difference)) {
+                        throw new \Exception("Cannot reduce purchase quantity. It will cause negative stock.");
+                    }
+                    $brand->increment('quantity', $difference);
+                }
+                
+                $purchase->update($request->only(['quantity', 'purchase_date', 'vendor_name', 'invoice_no', 'amount', 'remark']));
+            });
+            return back()->with('success', 'Purchase updated successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function purchaseDestroy($id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                $purchase = StockPurchase::findOrFail($id);
+                $brand = StockItemBrand::lockForUpdate()->findOrFail($purchase->brand_id);
+                
+                if ($brand->quantity < $purchase->quantity) {
+                    throw new \Exception("Cannot delete purchase. Stock is already consumed.");
+                }
+                
+                $brand->decrement('quantity', $purchase->quantity);
+                $purchase->delete();
+            });
+            return back()->with('success', 'Purchase deleted successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
     public function categoryIndex()
     {
         $categories = StockCategory::all();
@@ -137,10 +189,32 @@ class StockManagementController extends Controller
 
     public function allotmentIndex()
     {
-        $staffs = StaffModel::all();
+        $user = auth()->user();
+        $query = StaffModel::query();
+        
+        if (!$user->isAdmin() && $user->staff) {
+            $query->where('office_id', $user->staff->office_id);
+        }
+        
+        $staffs = $query->get();
+        $categories = StockCategory::all();
         $brands = StockItemBrand::with('item.category')->where('quantity', '>', 0)->get();
-        $allotments = StockAllotment::with(['staff', 'brand.item.category'])->get();
-        return view('StockManagement.allotments', compact('staffs', 'brands', 'allotments'));
+        return view('StockManagement.allotments', compact('staffs', 'categories', 'brands'));
+    }
+
+    public function allotmentHistoryIndex()
+    {
+        $user = auth()->user();
+        $query = StaffModel::whereHas('stockAllotments')
+            ->with(['stockAllotments.brand.item.category']);
+            
+        if (!$user->isAdmin() && $user->staff) {
+            $query->where('office_id', $user->staff->office_id);
+        }
+        
+        $staffsWithAllotments = $query->get();
+            
+        return view('StockManagement.allotment-history', compact('staffsWithAllotments'));
     }
 
     public function allotmentStore(Request $request)
@@ -157,13 +231,28 @@ class StockManagementController extends Controller
 
         try {
             DB::transaction(function () use ($request) {
+                // Group items by brand_id to prevent concurrency loop issues and sum quantities
+                $groupedItems = [];
                 foreach ($request->items as $itemData) {
-                    $brand = StockItemBrand::findOrFail($itemData['brand_id']);
+                    $bId = $itemData['brand_id'];
+                    if (!isset($groupedItems[$bId])) {
+                        $groupedItems[$bId] = 0;
+                    }
+                    $groupedItems[$bId] += $itemData['quantity'];
+                }
 
-                    if ($brand->quantity < $itemData['quantity']) {
+                // Check stock with lockForUpdate
+                foreach ($groupedItems as $brandId => $totalQuantity) {
+                    $brand = StockItemBrand::lockForUpdate()->findOrFail($brandId);
+                    if ($brand->quantity < $totalQuantity) {
                         throw new \Exception("Insufficient stock for: " . $brand->item->name . " - " . $brand->name);
                     }
+                    $brand->decrement('quantity', $totalQuantity);
+                }
 
+                // Create allotments
+                foreach ($request->items as $itemData) {
+                    $brand = StockItemBrand::findOrFail($itemData['brand_id']);
                     StockAllotment::create([
                         'staff_id' => $request->staff_id,
                         'item_id' => $brand->stock_item_id,
@@ -173,13 +262,78 @@ class StockManagementController extends Controller
                         'return_date' => $request->return_date,
                         'allotment_date' => $request->allotment_date,
                         'remark' => $request->remark,
+                        'status' => 'Allotted'
                     ]);
-
-                    $brand->decrement('quantity', $itemData['quantity']);
                 }
             });
 
             return back()->with('success', 'Stock items allotted successfully');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function allotmentReturn(Request $request, $id)
+    {
+        $request->validate([
+            'return_type' => 'required|in:inventory,dump'
+        ]);
+
+        try {
+            DB::transaction(function () use ($id, $request) {
+                $allotment = StockAllotment::findOrFail($id);
+                if ($allotment->status === 'Returned') {
+                    throw new \Exception("Item is already returned.");
+                }
+
+                $brand = StockItemBrand::lockForUpdate()->findOrFail($allotment->brand_id);
+                
+                if ($request->return_type === 'inventory') {
+                    $brand->increment('quantity', $allotment->quantity);
+                } elseif ($request->return_type === 'dump') {
+                    // Check if dump_quantity column exists, otherwise fallback to standard return or handle accordingly
+                    // Since we added migration, it should exist.
+                    $brand->increment('dump_quantity', $allotment->quantity);
+                }
+
+                $allotment->update([
+                    'status' => 'Returned',
+                    'returned_date' => now()
+                ]);
+            });
+            return back()->with('success', 'Item returned to ' . ucfirst($request->return_type) . ' successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function allotmentUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'return_date' => 'nullable|date',
+            'remark' => 'nullable|string',
+        ]);
+
+        $allotment = StockAllotment::findOrFail($id);
+        $allotment->update($request->only(['return_date', 'remark']));
+
+        return back()->with('success', 'Allotment updated successfully');
+    }
+
+    public function allotmentDestroy($id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                $allotment = StockAllotment::findOrFail($id);
+                
+                if ($allotment->status !== 'Returned') {
+                    $brand = StockItemBrand::lockForUpdate()->findOrFail($allotment->brand_id);
+                    $brand->increment('quantity', $allotment->quantity);
+                }
+                
+                $allotment->delete();
+            });
+            return back()->with('success', 'Allotment deleted successfully');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

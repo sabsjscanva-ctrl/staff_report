@@ -3,176 +3,178 @@
 @section('title', 'Stock Allotment')
 
 @section('content')
-<div class="mb-6 flex justify-between items-center">
-    <div>
-        <h2 class="text-2xl font-bold text-gray-800">Stock Allotment</h2>
-        <p class="text-sm text-gray-500 mt-1">Allot items to staff and track distribution history.</p>
+<!-- Header Section -->
+<div class="mb-8 relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-700 rounded-3xl p-8 text-white shadow-xl">
+    <div class="relative z-10">
+        <h2 class="text-3xl font-extrabold tracking-tight">Stock Allotment</h2>
+        <p class="text-indigo-100 mt-2 text-sm max-w-2xl">Manage and distribute IT assets seamlessly. Allot items to staff and track distribution history in real-time with a premium experience.</p>
+    </div>
+    <div class="absolute -right-10 -top-10 opacity-20 transform rotate-12">
+        <svg class="w-64 h-64" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
     </div>
 </div>
 
 @if(session('success'))
-<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-    <span class="block sm:inline">{{ session('success') }}</span>
+<div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-r-xl shadow-sm animate-[slideIn_0.5s_ease-out]" role="alert">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-green-700 font-medium">{{ session('success') }}</p>
+        </div>
+    </div>
 </div>
 @endif
 
 @if(session('error'))
-<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-    <span class="block sm:inline">{{ session('error') }}</span>
+<div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-xl shadow-sm animate-[slideIn_0.5s_ease-out]" role="alert">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-red-700 font-medium">{{ session('error') }}</p>
+        </div>
+    </div>
 </div>
 @endif
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="max-w-6xl mx-auto">
     <!-- Allotment Form -->
-    <div class="lg:col-span-1">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Allot Stock</h3>
+    <div>
+        <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-8">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800">New Allotment</h3>
+            </div>
+            
             <form action="{{ route('stock-management.allotments.store') }}" method="POST" id="allotmentForm">
                 @csrf
-                <div class="space-y-4">
-                    <div class="form-group">
-                        <label class="form-label font-bold text-gray-700">Select Staff</label>
-                        <select name="staff_id" required class="form-select border-2 border-indigo-100 focus:border-indigo-500 rounded-xl">
-                            <option value="">-- Select Staff --</option>
-                            @foreach($staffs as $staff)
-                                <option value="{{ $staff->id }}">{{ $staff->name }} ({{ $staff->designation }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="border-t border-b border-gray-100 py-4">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-bold text-gray-600 uppercase tracking-wider">Items to Allot</h4>
-                            <button type="button" onclick="addItemRow()" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                </svg>
-                                Add More
-                            </button>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Left Column: Staff & Items (Landscape) -->
+                    <div class="lg:col-span-7 space-y-6">
+                        <!-- Staff Selection -->
+                        <div class="form-group">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Assign To Staff</label>
+                            <select name="staff_id" required class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-3.5 transition-all duration-200">
+                                <option value="">-- Choose a Staff Member --</option>
+                                @foreach($staffs as $staff)
+                                    <option value="{{ $staff->id }}">{{ $staff->name }} ({{ $staff->designation }})</option>
+                                @endforeach
+                            </select>
                         </div>
-                        
-                        <div id="item-rows" class="space-y-4">
-                            <div class="item-row bg-gray-50 p-4 rounded-xl border border-gray-100 relative group">
-                                <div class="grid grid-cols-1 gap-3">
-                                    <div class="form-group">
-                                        <label class="text-xs font-bold text-gray-500 mb-1 block">Item (Brand/Model)</label>
-                                        <select name="items[0][brand_id]" required class="form-select text-sm border-gray-200 rounded-lg brand-select" onchange="validateStock(this)">
-                                            <option value="">-- Select Item --</option>
-                                            @foreach($brands as $brand)
-                                                <option value="{{ $brand->id }}" data-stock="{{ $brand->quantity }}">
-                                                    {{ $brand->item->name }} - {{ $brand->name }} (In Stock: {{ $brand->quantity }})
-                                                </option>
-                                            @endforeach
-                                        </select>
+
+                        <!-- Items Section -->
+                        <div class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100">
+                            <div class="flex justify-between items-center mb-5">
+                                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Items to Allot</h4>
+                                <button type="button" onclick="addItemRow()" class="text-xs bg-white border border-gray-200 text-indigo-600 px-4 py-2 rounded-lg font-bold hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 flex items-center gap-1.5 shadow-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Add Row
+                                </button>
+                            </div>
+                            
+                            <div id="item-rows" class="space-y-4">
+                                <div class="item-row bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative group hover:border-indigo-300 transition-all duration-200">
+                                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                        <div class="md:col-span-2">
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Category</label>
+                                            <select class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-2.5 transition-all duration-200 category-select" onchange="filterBrands(this)">
+                                                <option value="">-- Select Category --</option>
+                                                @foreach($categories as $category)
+                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Item Brand / Model</label>
+                                            <select name="items[0][brand_id]" required class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-2.5 transition-all duration-200 brand-select" onchange="validateStock()" disabled>
+                                                <option value="">-- Select Item --</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Quantity</label>
+                                            <input type="number" name="items[0][quantity]" required min="1" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-2.5 transition-all duration-200 qty-input" placeholder="Qty" oninput="validateStock()">
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label class="text-xs font-bold text-gray-500 mb-1 block">Quantity</label>
-                                        <input type="number" name="items[0][quantity]" required min="1" class="form-input text-sm border-gray-200 rounded-lg qty-input" placeholder="Qty" oninput="validateStock(this)">
-                                        <p class="stock-warning text-[10px] font-bold text-red-500 mt-1 hidden"></p>
-                                    </div>
+                                    <p class="stock-warning text-[10px] font-bold text-red-500 mt-2 hidden"></p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-indigo-50 p-4 rounded-xl space-y-3">
+                    <!-- Right Column: Details & Submit (Landscape) -->
+                    <div class="lg:col-span-5 space-y-6">
                         <div class="form-group">
-                            <label class="form-label text-xs font-bold text-indigo-700">Allotment Type</label>
-                            <div class="flex gap-2 mt-1">
-                                <label class="flex-1 cursor-pointer">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Allotment Type</label>
+                            <div class="flex p-1.5 bg-gray-100 rounded-xl">
+                                <label class="flex-1 text-center relative cursor-pointer">
                                     <input type="radio" name="allotment_type" value="Permanent" checked class="hidden peer" onchange="toggleReturnDate(false)">
-                                    <span class="block text-center py-2 rounded-lg border-2 border-white bg-white text-xs font-bold text-gray-500 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all shadow-sm">Permanent</span>
+                                    <span class="block py-2.5 text-xs font-bold text-gray-500 rounded-lg peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow transition-all duration-200">Permanent</span>
                                 </label>
-                                <label class="flex-1 cursor-pointer">
+                                <label class="flex-1 text-center relative cursor-pointer">
                                     <input type="radio" name="allotment_type" value="Temporary" class="hidden peer" onchange="toggleReturnDate(true)">
-                                    <span class="block text-center py-2 rounded-lg border-2 border-white bg-white text-xs font-bold text-gray-500 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 transition-all shadow-sm">Temporary</span>
+                                    <span class="block py-2.5 text-xs font-bold text-gray-500 rounded-lg peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow transition-all duration-200">Temporary</span>
                                 </label>
                             </div>
                         </div>
 
-                        <div class="hidden" id="return_date_group">
-                            <label class="text-xs font-bold text-red-600 mb-1 block">Return Date</label>
-                            <input type="date" name="return_date" id="return_date_input" class="form-input text-sm border-red-100 rounded-lg">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Allotment Date</label>
+                                <input type="date" name="allotment_date" required value="{{ date('Y-m-d') }}" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-3.5 transition-all duration-200">
+                            </div>
+
+                            <div id="return_date_wrapper" class="overflow-hidden transition-all duration-300 ease-in-out max-h-0 opacity-0">
+                                <label class="block text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">Expected Return</label>
+                                <input type="date" name="return_date" id="return_date_input" class="w-full bg-orange-50 border border-orange-200 text-orange-800 text-sm rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 block p-3.5 transition-all duration-200">
+                            </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="text-xs font-bold text-indigo-700 mb-1 block">Allotment Date</label>
-                            <input type="date" name="allotment_date" required value="{{ date('Y-m-d') }}" class="form-input text-sm border-indigo-100 rounded-lg">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Remark / Note</label>
+                            <textarea name="remark" rows="3" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 block p-3.5 transition-all duration-200" placeholder="Optional context for this allotment..."></textarea>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 py-4 px-6 rounded-xl shadow-lg shadow-indigo-200 text-sm font-bold text-white hover:shadow-xl hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 flex justify-center items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                Confirm Allotment
+                            </button>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label text-sm font-bold text-gray-700">Remark / Note</label>
-                        <textarea name="remark" rows="2" class="form-textarea border-gray-200 rounded-xl text-sm" placeholder="Reason for allotment..."></textarea>
-                    </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white hover:bg-indigo-700 focus:outline-none transition-all active:scale-95 flex justify-center items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                        Confirm Allotment
-                    </button>
                 </div>
             </form>
         </div>
     </div>
-
-    <!-- Allotment History -->
-    <div class="lg:col-span-2">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-4 border-b bg-gray-50">
-                <h3 class="text-lg font-semibold text-gray-800">Allotment History</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date / Type</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Details</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($allotments as $allot)
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-bold text-gray-900">{{ \Carbon\Carbon::parse($allot->allotment_date)->format('d M Y') }}</div>
-                                <div class="flex items-center gap-1.5 mt-1">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $allot->allotment_type == 'Temporary' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-blue-50 text-blue-600 border border-blue-100' }}">
-                                        {{ $allot->allotment_type }}
-                                    </span>
-                                    @if($allot->return_date)
-                                    <span class="text-[10px] text-red-500 font-semibold">Till: {{ \Carbon\Carbon::parse($allot->return_date)->format('d M Y') }}</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $allot->staff->name }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $allot->brand->item->name ?? 'Deleted' }} ({{ $allot->brand->name ?? 'N/A' }})</div>
-                                <div class="text-xs text-gray-500">{{ $allot->brand->item->category->name ?? 'N/A' }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                {{ $allot->quantity }}
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No allotment history found.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 </div>
+
 @endsection
 
 @push('scripts')
+<style>
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+</style>
 <script>
+    const allBrands = {!! json_encode($brands->map(function($b) {
+        return [
+            'id' => $b->id,
+            'category_id' => $b->item ? $b->item->category_id : null,
+            'name' => ($b->item ? $b->item->name : 'N/A') . ' - ' . $b->name . ' (Stock: ' . $b->quantity . ')',
+            'stock' => $b->quantity
+        ];
+    })->values()->all()) !!};
+
     let rowCount = 1;
 
     function addItemRow() {
@@ -181,18 +183,20 @@
         const newRow = firstRow.cloneNode(true);
         
         // Update names to use the new index
-        const selects = newRow.querySelectorAll('select');
-        selects.forEach(select => {
-            select.name = `items[${rowCount}][brand_id]`;
-            select.value = '';
-            select.classList.remove('border-red-500');
-        });
+        const brandSelect = newRow.querySelector('.brand-select');
+        brandSelect.name = `items[${rowCount}][brand_id]`;
+        brandSelect.innerHTML = '<option value="">-- Select Item --</option>';
+        brandSelect.disabled = true;
+        brandSelect.classList.remove('border-red-500', 'focus:ring-red-500/50');
+        
+        const categorySelect = newRow.querySelector('.category-select');
+        categorySelect.value = '';
 
         const inputs = newRow.querySelectorAll('input');
         inputs.forEach(input => {
             input.name = `items[${rowCount}][quantity]`;
             input.value = '';
-            input.classList.remove('border-red-500');
+            input.classList.remove('border-red-500', 'focus:ring-red-500/50');
         });
 
         // Hide warning in new row
@@ -203,73 +207,123 @@
         if (!newRow.querySelector('.remove-row-btn')) {
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
-            removeBtn.className = 'remove-row-btn absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors z-10';
+            removeBtn.className = 'remove-row-btn absolute -top-3 -right-3 bg-white border border-gray-200 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-full p-1.5 shadow-sm transition-all duration-200 z-10';
             removeBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             `;
             removeBtn.onclick = function() {
                 newRow.remove();
-                checkFormValidity();
+                validateStock();
             };
             newRow.appendChild(removeBtn);
         }
 
+        // Slight fade in animation
+        newRow.style.opacity = '0';
+        newRow.style.transform = 'translateY(-10px)';
         container.appendChild(newRow);
+        
+        // Trigger reflow
+        void newRow.offsetWidth;
+        
+        newRow.style.transition = 'all 0.3s ease';
+        newRow.style.opacity = '1';
+        newRow.style.transform = 'translateY(0)';
+
         rowCount++;
     }
 
-    function validateStock(element) {
-        const row = element.closest('.item-row');
+    function filterBrands(categorySelect) {
+        const row = categorySelect.closest('.item-row');
         const brandSelect = row.querySelector('.brand-select');
-        const qtyInput = row.querySelector('.qty-input');
-        const warning = row.querySelector('.stock-warning');
+        const categoryId = categorySelect.value;
         
-        const selectedOption = brandSelect.options[brandSelect.selectedIndex];
-        const availableStock = selectedOption ? parseInt(selectedOption.getAttribute('data-stock')) : 0;
-        const requestedQty = parseInt(qtyInput.value) || 0;
-
-        if (requestedQty > availableStock && brandSelect.value !== '') {
-            warning.textContent = `Insufficient stock! Max available: ${availableStock}`;
-            warning.classList.remove('hidden');
-            qtyInput.classList.add('border-red-500', 'bg-red-50');
-            qtyInput.classList.remove('border-gray-200');
+        brandSelect.innerHTML = '<option value="">-- Select Item --</option>';
+        brandSelect.value = '';
+        
+        if (categoryId) {
+            brandSelect.disabled = false;
+            const filteredBrands = allBrands.filter(b => b.category_id == categoryId);
+            filteredBrands.forEach(b => {
+                const option = document.createElement('option');
+                option.value = b.id;
+                option.textContent = b.name;
+                option.setAttribute('data-stock', b.stock);
+                brandSelect.appendChild(option);
+            });
         } else {
-            warning.classList.add('hidden');
-            qtyInput.classList.remove('border-red-500', 'bg-red-50');
-            qtyInput.classList.add('border-gray-200');
+            brandSelect.disabled = true;
         }
-        checkFormValidity();
+        
+        validateStock();
     }
 
-    function checkFormValidity() {
-        const form = document.getElementById('allotmentForm');
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const warnings = form.querySelectorAll('.stock-warning:not(.hidden)');
+    function validateStock() {
+        const allSelects = document.querySelectorAll('.brand-select');
+        const brandTotals = {};
         
-        if (warnings.length > 0) {
+        allSelects.forEach(select => {
+            const row = select.closest('.item-row');
+            const qtyInput = row.querySelector('.qty-input');
+            const qty = parseInt(qtyInput.value) || 0;
+            const bId = select.value;
+            
+            if (bId) {
+                if (!brandTotals[bId]) brandTotals[bId] = 0;
+                brandTotals[bId] += qty;
+            }
+        });
+
+        let formValid = true;
+
+        allSelects.forEach(select => {
+            const row = select.closest('.item-row');
+            const qtyInput = row.querySelector('.qty-input');
+            const warning = row.querySelector('.stock-warning');
+            
+            const selectedOption = select.options[select.selectedIndex];
+            const availableStock = selectedOption ? parseInt(selectedOption.getAttribute('data-stock')) : 0;
+            const bId = select.value;
+            
+            if (bId && brandTotals[bId] > availableStock) {
+                warning.textContent = `Insufficient stock! Total requested: ${brandTotals[bId]}, Max available: ${availableStock}`;
+                warning.classList.remove('hidden');
+                qtyInput.classList.add('border-red-500', 'bg-red-50', 'focus:ring-red-500/50');
+                qtyInput.classList.remove('border-gray-200', 'bg-gray-50', 'focus:ring-indigo-500/50');
+                formValid = false;
+            } else {
+                warning.classList.add('hidden');
+                qtyInput.classList.remove('border-red-500', 'bg-red-50', 'focus:ring-red-500/50');
+                qtyInput.classList.add('border-gray-200', 'bg-gray-50', 'focus:ring-indigo-500/50');
+            }
+        });
+        
+        const submitBtn = document.querySelector('#allotmentForm button[type="submit"]');
+        if (!formValid) {
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            submitBtn.classList.remove('hover:bg-indigo-700');
+            submitBtn.classList.remove('hover:-translate-y-0.5', 'hover:shadow-xl');
         } else {
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            submitBtn.classList.add('hover:bg-indigo-700');
+            submitBtn.classList.add('hover:-translate-y-0.5', 'hover:shadow-xl');
         }
     }
 
     function toggleReturnDate(show) {
-        const group = document.getElementById('return_date_group');
+        const wrapper = document.getElementById('return_date_wrapper');
         const input = document.getElementById('return_date_input');
         if (show) {
-            group.classList.remove('hidden');
+            wrapper.style.maxHeight = '100px';
+            wrapper.style.opacity = '1';
             input.required = true;
         } else {
-            group.classList.add('hidden');
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
             input.required = false;
             input.value = '';
         }
     }
+
 </script>
 @endpush

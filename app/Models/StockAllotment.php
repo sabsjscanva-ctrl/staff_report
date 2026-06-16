@@ -9,7 +9,7 @@ class StockAllotment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['staff_id', 'item_id', 'brand_id', 'quantity', 'allotment_type', 'return_date', 'allotment_date', 'remark'];
+    protected $fillable = ['staff_id', 'item_id', 'brand_id', 'quantity', 'allotment_type', 'return_date', 'allotment_date', 'remark', 'status', 'returned_date'];
 
     public function staff()
     {

@@ -85,6 +85,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor & Invoice</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -106,6 +107,16 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 ₹{{ number_format($purchase->amount, 2) }}
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="editPurchase({{ $purchase }})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                    <form action="{{ route('stock-management.purchases.destroy', $purchase->id) }}" method="POST" onsubmit="return confirm('Delete this purchase? This will reduce stock.');" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-900">Del</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
@@ -123,4 +134,64 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Modal -->
+<div id="editPurchaseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Edit Purchase</h3>
+            <form id="editPurchaseForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="space-y-3">
+                    <div class="form-group">
+                        <label class="text-xs">Quantity</label>
+                        <input type="number" name="quantity" id="edit_quantity" required min="1" class="form-input text-sm w-full">
+                    </div>
+                    <div class="form-group">
+                        <label class="text-xs">Purchase Date</label>
+                        <input type="date" name="purchase_date" id="edit_date" required class="form-input text-sm w-full">
+                    </div>
+                    <div class="form-group">
+                        <label class="text-xs">Vendor Name</label>
+                        <input type="text" name="vendor_name" id="edit_vendor" class="form-input text-sm w-full">
+                    </div>
+                    <div class="form-group">
+                        <label class="text-xs">Invoice No.</label>
+                        <input type="text" name="invoice_no" id="edit_invoice" class="form-input text-sm w-full">
+                    </div>
+                    <div class="form-group">
+                        <label class="text-xs">Total Amount</label>
+                        <input type="number" step="0.01" name="amount" id="edit_amount" class="form-input text-sm w-full">
+                    </div>
+                    <div class="form-group">
+                        <label class="text-xs">Remark</label>
+                        <textarea name="remark" id="edit_remark" class="form-input text-sm w-full" rows="2"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md text-sm font-medium">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editPurchase(purchase) {
+        document.getElementById('editPurchaseModal').classList.remove('hidden');
+        document.getElementById('editPurchaseForm').action = '/stock-management/purchases/' + purchase.id;
+        document.getElementById('edit_quantity').value = purchase.quantity;
+        document.getElementById('edit_date').value = purchase.purchase_date ? purchase.purchase_date.split(' ')[0] : '';
+        document.getElementById('edit_vendor').value = purchase.vendor_name || '';
+        document.getElementById('edit_invoice').value = purchase.invoice_no || '';
+        document.getElementById('edit_amount').value = purchase.amount || '';
+        document.getElementById('edit_remark').value = purchase.remark || '';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editPurchaseModal').classList.add('hidden');
+    }
+</script>
 @endsection
