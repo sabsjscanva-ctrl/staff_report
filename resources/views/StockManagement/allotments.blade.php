@@ -77,7 +77,7 @@
                                 <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Items to Allot</h4>
                                 <button type="button" onclick="addItemRow()" class="text-xs bg-white border border-gray-200 text-indigo-600 px-4 py-2 rounded-lg font-bold hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 flex items-center gap-1.5 shadow-sm">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    Add Row
+                                    Add Row <span class="text-[10px] opacity-70 ml-1 font-medium bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 text-gray-500">Alt+A</span>
                                 </button>
                             </div>
                             
@@ -176,6 +176,14 @@
     })->values()->all()) !!};
 
     let rowCount = 1;
+
+    // Keyboard shortcut for Add Row (Alt+A)
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && (e.key === 'a' || e.key === 'A')) {
+            e.preventDefault();
+            addItemRow();
+        }
+    });
 
     function addItemRow() {
         const container = document.getElementById('item-rows');
